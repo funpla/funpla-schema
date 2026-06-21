@@ -26,7 +26,7 @@ const partyBaseSchema = z.object({
   endDate: z.string().date(),
   endTime: z.string().time({ precision: 0 }),
   guestCount: z.number().int().positive(),
-  feeType: feeTypeSchema.nullable(),
+  feeType: feeTypeSchema,
   fee: z.number().int().nonnegative().nullable(),
   /** 一人当たりの場合の総予算。feeType が per_person のとき必須 */
   budget: z.number().int().nonnegative().nullable(),
