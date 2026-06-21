@@ -1,0 +1,8 @@
+pre-push:
+  commands:
+    typecheck:
+      run: pnpm typecheck
+pre-commit:
+  parallel: true
+  jobs:
+    - run: pnpm check
