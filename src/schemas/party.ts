@@ -1,6 +1,12 @@
 import { z } from "zod/v3";
 
-export const eventTypeSchema = z.enum(["懇親会", "ウェディング", "その他"]);
+/**
+ * イベント種別
+ * - `networking`: 懇親会
+ * - `wedding`: ウェディング
+ * - `other`: その他
+ */
+export const eventTypeSchema = z.enum(["networking", "wedding", "other"]);
 export type EventType = z.infer<typeof eventTypeSchema>;
 
 const partyBaseSchema = z.object({
