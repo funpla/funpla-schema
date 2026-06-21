@@ -1,0 +1,28 @@
+{
+  "name": "funpla-schema",
+  "version": "0.0.1",
+  "description": "Zod schemas and types for funpla",
+  "exports": {
+    "./user": {
+      "import": "./dist/user.js",
+      "require": "./dist/user.cjs",
+      "types": "./dist/schemas/user.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "prepare": "npm run build"
+  },
+  "peerDependencies": {
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0",
+    "zod": "^3.23.0"
+  }
+}
