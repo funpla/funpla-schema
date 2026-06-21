@@ -26,8 +26,8 @@ const partyBaseSchema = z.object({
   endDate: z.string().date(),
   endTime: z.string().time({ precision: 0 }),
   guestCount: z.number().int().positive(),
-  feeType: feeTypeSchema,
-  fee: z.number().int().nonnegative(),
+  feeType: feeTypeSchema.nullable(),
+  fee: z.number().int().nonnegative().nullable(),
   /** 一人当たりの場合の総予算。feeType が per_person のとき必須 */
   budget: z.number().int().nonnegative().nullable(),
   memo: z.string().max(200).nullable(),
@@ -49,7 +49,7 @@ const dateTimeRangeError = {
 };
 
 const validateBudget = (
-  data: { feeType: string; budget: number | null },
+  data: { feeType: string | null; budget: number | null },
   ctx: z.RefinementCtx,
 ) => {
   if (data.feeType === "per_person" && data.budget === null) {
