@@ -53,6 +53,14 @@ export type CreatePartyRequest = z.infer<typeof createPartyRequestSchema>;
 export const createPartyResponseSchema = partyBaseSchema.pick({ id: true });
 export type CreatePartyResponse = z.infer<typeof createPartyResponseSchema>;
 
+/** GET /party/:id のパスパラメータ */
+export const getPartyParamsSchema = partyBaseSchema.pick({ id: true });
+export type GetPartyParams = z.infer<typeof getPartyParamsSchema>;
+
+/** GET /party/:id のレスポンスボディ */
+export const getPartyResponseSchema = partySchema;
+export type GetPartyResponse = z.infer<typeof getPartyResponseSchema>;
+
 /** GET /party のリクエストクエリ */
 export const listPartiesRequestSchema = z.object({});
 export type ListPartiesRequest = z.infer<typeof listPartiesRequestSchema>;
