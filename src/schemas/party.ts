@@ -89,18 +89,18 @@ export type GetPartyParams = z.infer<typeof getPartyParamsSchema>;
 export const getPartyResponseSchema = partySchema;
 export type GetPartyResponse = z.infer<typeof getPartyResponseSchema>;
 
-/** PATCH /party/:id のパスパラメータ */
+/** PUT /party/:id のパスパラメータ */
 export const updatePartyParamsSchema = partyBaseSchema.pick({ id: true });
 export type UpdatePartyParams = z.infer<typeof updatePartyParamsSchema>;
 
-/** PATCH /party/:id のリクエストボディ */
+/** PUT /party/:id のリクエストボディ */
 export const updatePartyRequestSchema = partyBaseSchema
   .omit({ id: true, createdAt: true, updatedAt: true })
   .refine(validateDateTimeRange, dateTimeRangeError)
   .superRefine(validateBudget);
 export type UpdatePartyRequest = z.infer<typeof updatePartyRequestSchema>;
 
-/** PATCH /party/:id のレスポンスボディ */
+/** PUT /party/:id のレスポンスボディ */
 export const updatePartyResponseSchema = z.object({});
 export type UpdatePartyResponse = z.infer<typeof updatePartyResponseSchema>;
 
