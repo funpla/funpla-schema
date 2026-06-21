@@ -28,7 +28,7 @@ export const createPartyRequestSchema = partySchema.omit({
 export type CreatePartyRequest = z.infer<typeof createPartyRequestSchema>;
 
 /** POST /party のレスポンスボディ */
-export const createPartyResponseSchema = partySchema;
+export const createPartyResponseSchema = partySchema.pick({ id: true });
 export type CreatePartyResponse = z.infer<typeof createPartyResponseSchema>;
 
 /** GET /party のリクエストクエリ */
