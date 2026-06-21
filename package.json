@@ -1,12 +1,19 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {
       "import": "./dist/user.js",
       "require": "./dist/user.cjs",
       "types": "./dist/schemas/user.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "user": [
+        "./dist/schemas/user.d.ts"
+      ]
     }
   },
   "scripts": {
