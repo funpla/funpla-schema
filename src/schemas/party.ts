@@ -49,13 +49,17 @@ const dateTimeRangeError = {
 };
 
 const validateBudget = (
-  data: { feeType: string | null; budget: number | null },
+  data: { feeType: string; fee: number | null; budget: number | null },
   ctx: z.RefinementCtx,
 ) => {
-  if (data.feeType === "per_person" && data.budget === null) {
+  if (
+    data.feeType === "per_person" &&
+    data.fee === null &&
+    data.budget !== null
+  ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "一人当たりの場合は予算を入力してください",
+      message: "一人当たりの会費がない場合は別途予算を入力できません",
       path: ["budget"],
     });
   }
