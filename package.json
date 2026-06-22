@@ -1,6 +1,6 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {
@@ -12,6 +12,11 @@
       "import": "./dist/party.js",
       "require": "./dist/party.cjs",
       "types": "./dist/schemas/party.d.ts"
+    },
+    "./plan": {
+      "import": "./dist/plan.js",
+      "require": "./dist/plan.cjs",
+      "types": "./dist/schemas/plan.d.ts"
     }
   },
   "files": [
@@ -24,6 +29,9 @@
       ],
       "party": [
         "./dist/schemas/party.d.ts"
+      ],
+      "plan": [
+        "./dist/schemas/plan.d.ts"
       ]
     }
   },
