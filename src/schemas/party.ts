@@ -1,5 +1,5 @@
 import { z } from "zod/v3";
-import { partyPlanSchema } from "./plan";
+import { partyPlanSchema, planHistoryItemSchema } from "./plan";
 
 /**
  * イベント種別
@@ -116,3 +116,19 @@ export const listPartiesResponseSchema = z.object({
   parties: z.array(partySchema.and(z.object({ plan: partyPlanSchema }))),
 });
 export type ListPartiesResponse = z.infer<typeof listPartiesResponseSchema>;
+
+/** GET /party/:id/plan-history のパスパラメータ */
+export const getPartyPlanHistoryParamsSchema = partyBaseSchema.pick({
+  id: true,
+});
+export type GetPartyPlanHistoryParams = z.infer<
+  typeof getPartyPlanHistoryParamsSchema
+>;
+
+/** GET /party/:id/plan-history のレスポンスボディ */
+export const getPartyPlanHistoriesResponseSchema = z.object({
+  histories: z.array(planHistoryItemSchema),
+});
+export type GetPartyPlanHistoriesResponse = z.infer<
+  typeof getPartyPlanHistoriesResponseSchema
+>;

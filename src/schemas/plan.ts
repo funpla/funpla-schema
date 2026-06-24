@@ -13,7 +13,7 @@ export type PlanType = z.infer<typeof planTypeSchema>;
 export const partyPlanSchema = z.discriminatedUnion("currentPlan", [
   z.object({
     currentPlan: z.literal("free"),
-    startedAt: z.string().date(),
+    startedAt: z.null(),
     expiredAt: z.null(),
   }),
   z.object({
@@ -28,3 +28,22 @@ export const partyPlanSchema = z.discriminatedUnion("currentPlan", [
   }),
 ]);
 export type PartyPlan = z.infer<typeof partyPlanSchema>;
+
+/**
+ * プラン履歴の1件
+ * - `fromPlanType`: 変更前のプランタイプ（初回契約時は null）
+ * - `toPlanType`: 変更後のプランタイプ
+ * - `amount`: 支払金額（無料の場合は null）
+ * - `expiredAt`: プランの有効期限（free の場合は null）
+ * - `paidAt`: 支払日時（無料の場合は null）
+ * - `createdAt`: 履歴の作成日時
+ */
+export const planHistoryItemSchema = z.object({
+  fromPlanType: planTypeSchema.nullable(),
+  toPlanType: planTypeSchema,
+  amount: z.number().int().nullable(),
+  expiredAt: z.string().nullable(),
+  paidAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type PlanHistoryItem = z.infer<typeof planHistoryItemSchema>;
