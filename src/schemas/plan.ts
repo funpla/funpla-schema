@@ -9,11 +9,11 @@ import { z } from "zod/v3";
 export const planTypeSchema = z.enum(["free", "standard", "wedding"]);
 export type PlanType = z.infer<typeof planTypeSchema>;
 
-/** プラン情報。free の場合は startedAt, expiredAt が null */
+/** プラン情報。free の場合は expiredAt が null */
 export const partyPlanSchema = z.discriminatedUnion("currentPlan", [
   z.object({
     currentPlan: z.literal("free"),
-    startedAt: z.null(),
+    startedAt: z.string().date(),
     expiredAt: z.null(),
   }),
   z.object({
