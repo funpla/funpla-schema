@@ -1,5 +1,5 @@
 import { z } from "zod/v3";
-import { partyPlanSchema, planHistoryItemSchema } from "./plan";
+import { partyPlanSchema, planHistoryItemSchema, planTypeSchema } from "./plan";
 
 /**
  * イベント種別
@@ -132,3 +132,25 @@ export const getPartyPlanHistoriesResponseSchema = z.object({
 export type GetPartyPlanHistoriesResponse = z.infer<
   typeof getPartyPlanHistoriesResponseSchema
 >;
+
+/** POST /party/:id/plan/checkout のパスパラメータ */
+export const purchasePlanParamsSchema = partyBaseSchema.pick({ id: true });
+export type PurchasePlanParams = z.infer<typeof purchasePlanParamsSchema>;
+
+/**
+ * POST /party/:id/plan/checkout のリクエストボディ
+ * - `currentPlanType`: 現在のプランタイプ
+ * - `toPlanType`: 変更先のプランタイプ（free へのダウングレードは不可）
+ */
+export const purchasePlanRequestSchema = z.object({
+  currentPlanType: planTypeSchema,
+  toPlanType: z.enum(["standard", "wedding"]),
+});
+export type PurchasePlanRequest = z.infer<typeof purchasePlanRequestSchema>;
+
+/**
+ * POST /party/:id/plan/checkout のレスポンスボディ
+ * - `url`: 決済ページの URL
+ */
+export const purchasePlanResponseSchema = z.object({ url: z.string() });
+export type PurchasePlanResponse = z.infer<typeof purchasePlanResponseSchema>;
