@@ -86,14 +86,25 @@ const photoTextChoiceSchema = textChoiceSchema.extend({
   imageUrl: z.string().url(),
 });
 
+/**
+ * 問題文のテキストサイズ
+ * - `small`: 小
+ * - `medium`: 中
+ * - `large`: 大
+ */
+export const questionTextSizeSchema = z.enum(["small", "medium", "large"]);
+export type QuestionTextSize = z.infer<typeof questionTextSizeSchema>;
+
 const photoTextQuestionContentSchema = z.object({
   text: z.string(),
+  textSize: questionTextSizeSchema,
   /** question_image_key から生成した presigned URL */
   imageUrl: z.string().url(),
 });
 
 const textQuestionContentSchema = z.object({
   text: z.string(),
+  textSize: questionTextSizeSchema,
 });
 
 const twoChoicePhotoTextQuestionSchema = questionBaseSchema.extend({
