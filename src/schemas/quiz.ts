@@ -5,8 +5,8 @@ import { z } from "zod/v3";
  * - `solo`: 個人戦
  * - `team`: チーム戦
  */
-export const quizQuizPlayModeSchema = z.enum(["solo", "team"]);
-export type QuizPlayMode = z.infer<typeof quizQuizPlayModeSchema>;
+export const quizPlayModeSchema = z.enum(["solo", "team"]);
+export type QuizPlayMode = z.infer<typeof quizPlayModeSchema>;
 
 /**
  * 問題タイプ
@@ -27,8 +27,7 @@ const quizBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(50),
   durationMinutes: z.number().int().positive(),
-  displayOrder: z.number().int().min(1).max(5),
-  playMode: quizQuizPlayModeSchema,
+  playMode: quizPlayModeSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
