@@ -58,7 +58,11 @@ export type ListQuizzesParams = z.infer<typeof listQuizzesParamsSchema>;
 
 /** GET /parties/:partyId/quizzes のレスポンスボディ */
 export const listQuizzesResponseSchema = z.object({
-  quizzes: z.array(quizBaseSchema),
+  quizzes: z.array(
+    quizBaseSchema.and(
+      z.object({ questionCount: z.number().int().nonnegative() }),
+    ),
+  ),
 });
 export type ListQuizzesResponse = z.infer<typeof listQuizzesResponseSchema>;
 
