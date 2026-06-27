@@ -1,6 +1,6 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {
@@ -17,6 +17,11 @@
       "import": "./dist/plan.js",
       "require": "./dist/plan.cjs",
       "types": "./dist/schemas/plan.d.ts"
+    },
+    "./quiz": {
+      "import": "./dist/quiz.js",
+      "require": "./dist/quiz.cjs",
+      "types": "./dist/schemas/quiz.d.ts"
     }
   },
   "files": [
@@ -32,6 +37,9 @@
       ],
       "plan": [
         "./dist/schemas/plan.d.ts"
+      ],
+      "quiz": [
+        "./dist/schemas/quiz.d.ts"
       ]
     }
   },
