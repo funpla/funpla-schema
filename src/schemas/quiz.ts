@@ -82,7 +82,9 @@ const textChoiceSchema = z.object({
 
 /** 選択肢（写真+テキスト）— 写真が選択肢側のとき */
 const photoTextChoiceSchema = textChoiceSchema.extend({
-  /** choice_*_image_key から生成した presigned URL */
+  /** 保存・編集で使う正準値（choice_*_image_key） */
+  imageKey: z.string(),
+  /** imageKey から生成した表示用 presigned URL */
   imageUrl: z.string().url(),
 });
 
@@ -98,7 +100,9 @@ export type QuestionTextSize = z.infer<typeof questionTextSizeSchema>;
 const photoTextQuestionContentSchema = z.object({
   text: z.string(),
   textSize: questionTextSizeSchema,
-  /** question_image_key から生成した presigned URL */
+  /** 保存・編集で使う正準値（question_image_key） */
+  imageKey: z.string(),
+  /** imageKey から生成した表示用 presigned URL */
   imageUrl: z.string().url(),
 });
 
@@ -168,6 +172,149 @@ export const getQuizResponseSchema = z.object({
   questions: z.array(quizQuestionSchema),
 });
 export type GetQuizResponse = z.infer<typeof getQuizResponseSchema>;
+
+// ── クイズ質問の編集（PUT /party/:partyId/quizzes/:quizId/questions） ──
+//
+// 差分送信はせず「最終状態の全質問」を送り、サーバーが id 突き合わせ
+// （reconcile）で新規/更新/削除を判定する方式。
+// - 新規は id 無しで送信（サーバーが採番）、id ありは既存の更新。
+// - questionType の変更は「削除＋新規」で表現するため、既存 id の
+//   questionType はサーバー側で不変前提として扱う。
+// - 入力では画像を presigned URL ではなく R2 の key（imageKey）で受け取る。
+// - 表示順は displayOrder で明示的に送る。
+
+/** 選択肢（テキストのみ）入力 — 写真が問題側のとき */
+const textChoiceInputSchema = z.object({
+  text: z.string(),
+  /** 当日確定（isAnswerDecidedOnDay=true）なら null */
+  isCorrect: z.boolean().nullable(),
+});
+
+/** 選択肢（写真+テキスト）入力 — 写真が選択肢側のとき */
+const photoTextChoiceInputSchema = textChoiceInputSchema.extend({
+  imageKey: z.string(),
+});
+
+/** 問題文（テキストのみ）入力 — 写真が選択肢側の種別 */
+const textQuestionContentInputSchema = z.object({
+  text: z.string(),
+  textSize: questionTextSizeSchema,
+});
+
+/** 問題文（写真+テキスト）入力 — 写真が問題側の種別 */
+const photoTextQuestionContentInputSchema =
+  textQuestionContentInputSchema.extend({
+    imageKey: z.string(),
+  });
+
+const questionInputBaseSchema = z.object({
+  /** 省略 = 新規、あり = 既存の更新 */
+  id: z.string().uuid().optional(),
+  /** 表示順（0 始まり） */
+  displayOrder: z.number().int().nonnegative(),
+  timeLimitSeconds: z.number().int().positive(),
+  /** true の場合は当日に正解を決める（このとき全選択肢の isCorrect は null） */
+  isAnswerDecidedOnDay: z.boolean(),
+});
+
+const twoChoicePhotoTextQuestionInputSchema = questionInputBaseSchema.extend({
+  questionType: z.literal("two_choice_photo_text_question"),
+  question: photoTextQuestionContentInputSchema,
+  choices: z.object({ a: textChoiceInputSchema, b: textChoiceInputSchema }),
+});
+
+const fourChoicePhotoTextQuestionInputSchema = questionInputBaseSchema.extend({
+  questionType: z.literal("four_choice_photo_text_question"),
+  question: photoTextQuestionContentInputSchema,
+  choices: z.object({
+    a: textChoiceInputSchema,
+    b: textChoiceInputSchema,
+    c: textChoiceInputSchema,
+    d: textChoiceInputSchema,
+  }),
+});
+
+const twoChoicePhotoTextAnswerInputSchema = questionInputBaseSchema.extend({
+  questionType: z.literal("two_choice_photo_text_answer"),
+  question: textQuestionContentInputSchema,
+  choices: z.object({
+    a: photoTextChoiceInputSchema,
+    b: photoTextChoiceInputSchema,
+  }),
+});
+
+const fourChoicePhotoTextAnswerInputSchema = questionInputBaseSchema.extend({
+  questionType: z.literal("four_choice_photo_text_answer"),
+  question: textQuestionContentInputSchema,
+  choices: z.object({
+    a: photoTextChoiceInputSchema,
+    b: photoTextChoiceInputSchema,
+    c: photoTextChoiceInputSchema,
+    d: photoTextChoiceInputSchema,
+  }),
+});
+
+const quizQuestionInputSchema = z.discriminatedUnion("questionType", [
+  twoChoicePhotoTextQuestionInputSchema,
+  fourChoicePhotoTextQuestionInputSchema,
+  twoChoicePhotoTextAnswerInputSchema,
+  fourChoicePhotoTextAnswerInputSchema,
+]);
+export type QuizQuestionInput = z.infer<typeof quizQuestionInputSchema>;
+
+/** PUT /party/:partyId/quizzes/:quizId/questions のパスパラメータ */
+export const updateQuizQuestionsParamsSchema = z.object({
+  partyId: z.string().uuid(),
+  quizId: z.string().uuid(),
+});
+export type UpdateQuizQuestionsParams = z.infer<
+  typeof updateQuizQuestionsParamsSchema
+>;
+
+/**
+ * PUT /party/:partyId/quizzes/:quizId/questions のリクエストボディ
+ *
+ * 表示順は各質問の displayOrder で明示的に指定する。質問数の上限は設けない。
+ * 「当日確定 ↔ isCorrect」の整合は discriminated union で表せないため superRefine で検証する。
+ */
+export const updateQuizQuestionsRequestSchema = z.object({
+  questions: z
+    .array(quizQuestionInputSchema)
+    .min(1, "質問を最低1つ指定してください")
+    .superRefine((questions, ctx) => {
+      questions.forEach((q, i) => {
+        const choices = Object.values(q.choices);
+        if (q.isAnswerDecidedOnDay) {
+          // 当日確定: isCorrect は全て null
+          if (choices.some((c) => c.isCorrect !== null)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [i, "choices"],
+              message: "当日確定の質問では isCorrect を null にしてください",
+            });
+          }
+        } else {
+          // 事前確定: 最低1つは true
+          if (!choices.some((c) => c.isCorrect === true)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [i, "choices"],
+              message: "正解を最低1つ指定してください",
+            });
+          }
+        }
+      });
+    }),
+});
+export type UpdateQuizQuestionsRequest = z.infer<
+  typeof updateQuizQuestionsRequestSchema
+>;
+
+/** PUT /party/:partyId/quizzes/:quizId/questions のレスポンスボディ */
+export const updateQuizQuestionsResponseSchema = z.object({});
+export type UpdateQuizQuestionsResponse = z.infer<
+  typeof updateQuizQuestionsResponseSchema
+>;
 
 /** DELETE /party/:partyId/quizzes/:quizId のパスパラメータ */
 export const deleteQuizParamsSchema = z.object({
