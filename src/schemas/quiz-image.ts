@@ -22,7 +22,8 @@ export type CreateImageUploadUrlsParams = z.infer<
  * これからアップロードする画像の枚数。
  */
 export const createImageUploadUrlsRequestSchema = z.object({
-  count: z.number().int().positive(),
+  //一つの質問に4枚、30問として合計で120枚なので、一旦130にしておく
+  count: z.number().int().positive().max(130),
 });
 export type CreateImageUploadUrlsRequest = z.infer<
   typeof createImageUploadUrlsRequestSchema
