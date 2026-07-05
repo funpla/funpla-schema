@@ -306,8 +306,7 @@ export type GetQuizSessionResponse = z.infer<
 
 /**
  * POST /party/:partyId/quizzes/:quizId/session/start のパスパラメータ。
- * sessionId 採番 + DO 初期化を起動する。ボディ・レスポンスは持たない
- * （sessionId は操作画面が別途取得する。操作画面はスタート画面とは別のため）。
+ * sessionId を採番して DO 初期化を起動する。既に実行中なら既存 sessionId へ復帰する。
  */
 export const startQuizSessionParamsSchema = z.object({
   partyId: z.string().uuid(),
@@ -315,6 +314,18 @@ export const startQuizSessionParamsSchema = z.object({
 });
 export type StartQuizSessionParams = z.infer<
   typeof startQuizSessionParamsSchema
+>;
+
+/**
+ * POST /party/:partyId/quizzes/:quizId/session/start のレスポンス。
+ * 採番（または復帰した既存の）sessionId を返す。呼び出し側はこれで QR URL
+ * /game/quiz/:id を生成し、WebSocket 接続に使う。
+ */
+export const startQuizSessionResponseSchema = z.object({
+  sessionId: z.string().uuid(),
+});
+export type StartQuizSessionResponse = z.infer<
+  typeof startQuizSessionResponseSchema
 >;
 
 /**
