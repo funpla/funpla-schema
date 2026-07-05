@@ -1,5 +1,5 @@
 import { z } from "zod/v3";
-import { questionTextSizeSchema } from "./quiz";
+import { questionTextSizeSchema, quizPlayModeSchema } from "./quiz";
 
 // ══════════════════════════════════════════════════════════════════════════
 // クイズ実行(Durable Object)用スキーマ
@@ -178,6 +178,10 @@ export type PublicQuizQuestion = z.infer<typeof publicQuizQuestionSchema>;
 const sessionStateBaseSchema = z.object({
   type: z.literal("state"),
   phase: quizSessionPhaseSchema,
+  /** クイズ名 */
+  quizName: z.string(),
+  /** プレイモード（solo / team）。表示に使う。状態や採点には影響しない */
+  playMode: quizPlayModeSchema,
   /** 現在の問題番号（0 始まり）。lobby では 0 */
   questionIndex: z.number().int().nonnegative(),
   totalQuestions: z.number().int().nonnegative(),
