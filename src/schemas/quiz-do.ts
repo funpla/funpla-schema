@@ -432,6 +432,12 @@ export type QuizSessionSubmitAnswer = z.infer<
  * 他人のスコア一覧（roster）は渡さない。correctChoice は revealed のみ非 null。
  */
 export const quizSessionParticipantStateSchema = sessionStateBaseSchema.extend({
+  /**
+   * 自分のハンドルネーム（サーバー保管値）。
+   * 再接続時は participantId しか持たずクライアントが handleName を復元できないため、
+   * state に含めて返す。
+   */
+  handleName: z.string(),
   /** revealed のときの正解。それ以外は null（正解の秘匿） */
   correctChoice: choiceKeySchema.nullable(),
   /** 自分の累計スコア */
