@@ -205,9 +205,9 @@ export type QuizSessionParticipant = z.infer<
 
 /** エラーコード（受信は全ロール共通） */
 export const quizSessionErrorCodeSchema = z.enum([
+  "bad_message", // メッセージが不正（JSON パース不能・スキーマ不一致）
   "invalid_phase", // そのフェーズでは受理できないコマンド
   "not_accepting_answers", // answering 以外での回答
-  "already_answered", // 現在の問題に回答済み
   "correct_answer_required", // 当日確定で正解未セットのまま reveal
   "invalid_choice", // 存在しない選択肢
   "invalid_participant", // 未知の participantId
