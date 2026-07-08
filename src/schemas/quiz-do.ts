@@ -203,6 +203,41 @@ export type QuizSessionParticipant = z.infer<
   typeof quizSessionParticipantSchema
 >;
 
+/**
+ * 選択肢ごとの回答数（結果画面の集計表示用）。
+ * questionType で分け、選択肢数に応じた counts を持つ（2 択は a/b、4 択は a/b/c/d）。
+ */
+const twoChoiceCountsSchema = z.object({
+  a: z.number().int().nonnegative(),
+  b: z.number().int().nonnegative(),
+});
+const fourChoiceCountsSchema = z.object({
+  a: z.number().int().nonnegative(),
+  b: z.number().int().nonnegative(),
+  c: z.number().int().nonnegative(),
+  d: z.number().int().nonnegative(),
+});
+
+export const answerTallySchema = z.discriminatedUnion("questionType", [
+  z.object({
+    questionType: z.literal("two_choice_photo_text_question"),
+    counts: twoChoiceCountsSchema,
+  }),
+  z.object({
+    questionType: z.literal("two_choice_photo_text_answer"),
+    counts: twoChoiceCountsSchema,
+  }),
+  z.object({
+    questionType: z.literal("four_choice_photo_text_question"),
+    counts: fourChoiceCountsSchema,
+  }),
+  z.object({
+    questionType: z.literal("four_choice_photo_text_answer"),
+    counts: fourChoiceCountsSchema,
+  }),
+]);
+export type AnswerTally = z.infer<typeof answerTallySchema>;
+
 /** エラーコード（受信は全ロール共通） */
 export const quizSessionErrorCodeSchema = z.enum([
   "bad_message", // メッセージが不正（JSON パース不能・スキーマ不一致）
@@ -394,6 +429,8 @@ export const quizSessionHostStateSchema = sessionStateBaseSchema.extend({
   correctChoice: choiceKeySchema.nullable(),
   /** 現在の問題への回答者数 */
   answeredCount: z.number().int().nonnegative(),
+  /** 選択肢ごとの回答数（結果画面の集計表示用）。問題が無い lobby / finished では null */
+  answerTally: answerTallySchema.nullable(),
   /** 参加者一覧（ランキング用） */
   participants: z.array(quizSessionParticipantSchema),
 });
@@ -474,6 +511,8 @@ export const quizSessionDisplayStateSchema = sessionStateBaseSchema.extend({
   correctChoice: choiceKeySchema.nullable(),
   /** 現在の問題への回答者数 */
   answeredCount: z.number().int().nonnegative(),
+  /** 選択肢ごとの回答数（結果画面の集計表示用）。問題が無い lobby / finished では null */
+  answerTally: answerTallySchema.nullable(),
   /** 参加者一覧（ランキング表示用） */
   participants: z.array(quizSessionParticipantSchema),
 });
