@@ -69,7 +69,8 @@ export type ListQuizzesResponse = z.infer<typeof listQuizzesResponseSchema>;
 const questionBaseSchema = z.object({
   id: z.string().uuid(),
   displayOrder: z.number().int().nonnegative(),
-  timeLimitSeconds: z.number().int().positive(),
+  /** 回答の制限時間（秒）。null の場合は無制限（カウントダウンなし・手動で締切/オープン） */
+  timeLimitSeconds: z.number().int().positive().nullable(),
   /** true の場合は当日に正解を決める（このとき全選択肢の isCorrect は null） */
   isAnswerDecidedOnDay: z.boolean(),
 });
@@ -212,7 +213,8 @@ const questionInputBaseSchema = z.object({
   id: z.string().uuid().optional(),
   /** 表示順（0 始まり） */
   displayOrder: z.number().int().nonnegative(),
-  timeLimitSeconds: z.number().int().positive(),
+  /** 回答の制限時間（秒）。null の場合は無制限（カウントダウンなし・手動で締切/オープン） */
+  timeLimitSeconds: z.number().int().positive().nullable(),
   /** true の場合は当日に正解を決める（このとき全選択肢の isCorrect は null） */
   isAnswerDecidedOnDay: z.boolean(),
 });

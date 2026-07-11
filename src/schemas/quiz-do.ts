@@ -132,7 +132,8 @@ const publicTextQuestionContentSchema = z.object({
 const publicQuestionBaseSchema = z.object({
   id: z.string().uuid(),
   displayOrder: z.number().int().nonnegative(),
-  timeLimitSeconds: z.number().int().positive(),
+  /** 回答の制限時間（秒）。null の場合は無制限（カウントダウンなし・手動で締切/オープン） */
+  timeLimitSeconds: z.number().int().positive().nullable(),
   isAnswerDecidedOnDay: z.boolean(),
 });
 
