@@ -67,10 +67,9 @@ const twoChoiceKeySchema = z.enum(["a", "b"]);
 const fourChoiceKeySchema = z.enum(["a", "b", "c", "d"]);
 
 /**
- * 「questionType に応じて choice の値域が変わる」メッセージのスキーマを、
+ * 「questionType に応じて choice の値域が変わる」単一選択メッセージのスキーマを、
  * 指定した type リテラルで生成するファクトリ。
- * submit_answer（参加者の回答）と set_correct_answer（当日確定の正解セット）が
- * 同一構造なので共通化する。2 択には c/d を送れない。
+ * submit_answer（参加者の回答＝1 つだけ選ぶ）で使う。2 択には c/d を送れない。
  */
 const choiceByQuestionTypeSchema = <T extends string>(type: T) =>
   z.discriminatedUnion("questionType", [
@@ -93,6 +92,39 @@ const choiceByQuestionTypeSchema = <T extends string>(type: T) =>
       type: z.literal(type),
       questionType: z.literal("four_choice_photo_text_answer"),
       choice: fourChoiceKeySchema,
+    }),
+  ]);
+
+/**
+ * 「questionType に応じて choices の値域が変わる」複数選択メッセージのスキーマを、
+ * 指定した type リテラルで生成するファクトリ。
+ * set_correct_answer（当日確定の正解セット）で使う。正解は複数指定でき、
+ * 送られた choices で保存済みの正解セットを丸ごと上書きする。
+ * チェックボックス UI で全解除した場合は空配列も送られうるため空を許容する
+ * （「正解が 1 つ以上」の不変条件はセット時ではなく reveal 時に検証する）。
+ * 2 択には c/d を含められない。
+ */
+const choicesByQuestionTypeSchema = <T extends string>(type: T) =>
+  z.discriminatedUnion("questionType", [
+    z.object({
+      type: z.literal(type),
+      questionType: z.literal("two_choice_photo_text_question"),
+      choices: z.array(twoChoiceKeySchema),
+    }),
+    z.object({
+      type: z.literal(type),
+      questionType: z.literal("two_choice_photo_text_answer"),
+      choices: z.array(twoChoiceKeySchema),
+    }),
+    z.object({
+      type: z.literal(type),
+      questionType: z.literal("four_choice_photo_text_question"),
+      choices: z.array(fourChoiceKeySchema),
+    }),
+    z.object({
+      type: z.literal(type),
+      questionType: z.literal("four_choice_photo_text_answer"),
+      choices: z.array(fourChoiceKeySchema),
     }),
   ]);
 
@@ -395,10 +427,12 @@ const nextQuestionSchema = z.object({ type: z.literal("next_question") });
 
 /**
  * 当日確定の正解をセット（answering / closed で受理）。
- * questionType を一緒に送り choice の値域を制約する（2 択に c/d をセットできない）。
+ * questionType を一緒に送り choices の値域を制約する（2 択に c/d をセットできない）。
+ * 正解は複数指定でき、送った choices で保存済みの正解セットを丸ごと上書きする。
+ * 全解除（空配列）も許容し、その状態では reveal できない（correct_answer_required）。
  */
 export const quizSessionSetCorrectAnswerSchema =
-  choiceByQuestionTypeSchema("set_correct_answer");
+  choicesByQuestionTypeSchema("set_correct_answer");
 export type QuizSessionSetCorrectAnswer = z.infer<
   typeof quizSessionSetCorrectAnswerSchema
 >;
@@ -423,11 +457,12 @@ export type QuizSessionHostCommand = z.infer<
 
 /**
  * host 受信 state。進行に必要な情報を持つ。
- * correctChoice は host には既知の正解を随時見せる（通常問題は常に、当日確定は
- * set_correct_answer 後）。これにより reveal 可否や「正解: B」を表示できる。
+ * correctChoices は host には既知の正解を随時見せる（通常問題は常に、当日確定は
+ * set_correct_answer 後）。これにより reveal 可否や「正解: A, C」を表示できる。
+ * 正解は複数ありうるため配列。未確定（当日確定で未セット）や非表示のときは空配列。
  */
 export const quizSessionHostStateSchema = sessionStateBaseSchema.extend({
-  correctChoice: choiceKeySchema.nullable(),
+  correctChoices: z.array(choiceKeySchema),
   /** 現在の問題への回答者数 */
   answeredCount: z.number().int().nonnegative(),
   /** 選択肢ごとの回答数（結果画面の集計表示用）。問題が無い lobby / finished では null */
@@ -467,7 +502,7 @@ export type QuizSessionSubmitAnswer = z.infer<
 
 /**
  * participant 受信 state。自分視点の最小限のみ。
- * 他人のスコア一覧（roster）は渡さない。correctChoice は revealed のみ非 null。
+ * 他人のスコア一覧（roster）は渡さない。correctChoices は revealed のみ非空。
  */
 export const quizSessionParticipantStateSchema = sessionStateBaseSchema.extend({
   /**
@@ -476,8 +511,8 @@ export const quizSessionParticipantStateSchema = sessionStateBaseSchema.extend({
    * state に含めて返す。
    */
   handleName: z.string(),
-  /** revealed のときの正解。それ以外は null（正解の秘匿） */
-  correctChoice: choiceKeySchema.nullable(),
+  /** revealed のときの正解（複数ありうる）。それ以外は空配列（正解の秘匿） */
+  correctChoices: z.array(choiceKeySchema),
   /** 自分の累計スコア */
   score: z.number().int().nonnegative(),
   /**
@@ -505,11 +540,11 @@ export type QuizSessionParticipantServerMessage = z.infer<
 
 /**
  * display 受信 state。投影して見せる情報のみ。送信スキーマは持たない（受信専用）。
- * correctChoice は revealed のみ非 null。
+ * correctChoices は revealed のみ非空。
  */
 export const quizSessionDisplayStateSchema = sessionStateBaseSchema.extend({
-  /** revealed のときの正解。それ以外は null（正解の秘匿） */
-  correctChoice: choiceKeySchema.nullable(),
+  /** revealed のときの正解（複数ありうる）。それ以外は空配列（正解の秘匿） */
+  correctChoices: z.array(choiceKeySchema),
   /** 現在の問題への回答者数 */
   answeredCount: z.number().int().nonnegative(),
   /** 選択肢ごとの回答数（結果画面の集計表示用）。問題が無い lobby / finished では null */
