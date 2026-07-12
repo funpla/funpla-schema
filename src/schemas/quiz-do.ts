@@ -151,9 +151,7 @@ export type QuizSessionPhase = z.infer<typeof quizSessionPhaseSchema>;
 const publicTextChoiceSchema = z.object({ text: z.string() });
 const publicPhotoTextChoiceSchema = z.object({
   text: z.string(),
-  /** imageUrl が指すメディアの種別（画像 / 動画） */
-  mediaType: mediaTypeSchema,
-  /** 表示用 presigned URL */
+  /** 表示用 presigned URL（選択肢は画像のみ） */
   imageUrl: z.string().url(),
 });
 

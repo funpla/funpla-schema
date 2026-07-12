@@ -28,8 +28,9 @@ export type QuestionType = z.infer<typeof questionTypeSchema>;
  * - `image`: 画像
  * - `video`: 動画
  *
- * imageKey / imageUrl が指す R2 オブジェクトが画像か動画かを表す。
- * FE は描画時にこの値で `<img>` / `<video>` を切り替える。
+ * 問題文（写真が問題側の種別）の imageKey / imageUrl が指す R2 オブジェクトが
+ * 画像か動画かを表す。FE は描画時にこの値で `<img>` / `<video>` を切り替える。
+ * 選択肢（写真が選択肢側の種別）は画像のみのため mediaType を持たない。
  */
 export const mediaTypeSchema = z.enum(["image", "video"]);
 export type MediaType = z.infer<typeof mediaTypeSchema>;
@@ -92,10 +93,8 @@ const textChoiceSchema = z.object({
   isCorrect: z.boolean().nullable(),
 });
 
-/** 選択肢（写真+テキスト）— 写真が選択肢側のとき */
+/** 選択肢（写真+テキスト）— 写真が選択肢側のとき（選択肢は画像のみ） */
 const photoTextChoiceSchema = textChoiceSchema.extend({
-  /** imageKey が指すメディアの種別（画像 / 動画） */
-  mediaType: mediaTypeSchema,
   /** 保存・編集で使う正準値（choice_*_image_key） */
   imageKey: z.string(),
   /** imageKey から生成した表示用 presigned URL */
@@ -206,10 +205,8 @@ const textChoiceInputSchema = z.object({
   isCorrect: z.boolean().nullable(),
 });
 
-/** 選択肢（写真+テキスト）入力 — 写真が選択肢側のとき */
+/** 選択肢（写真+テキスト）入力 — 写真が選択肢側のとき（選択肢は画像のみ） */
 const photoTextChoiceInputSchema = textChoiceInputSchema.extend({
-  /** imageKey が指すメディアの種別（画像 / 動画） */
-  mediaType: mediaTypeSchema,
   imageKey: z.string(),
 });
 
