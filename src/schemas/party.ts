@@ -144,7 +144,7 @@ export type PurchasePlanParams = z.infer<typeof purchasePlanParamsSchema>;
  */
 export const purchasePlanRequestSchema = z.object({
   currentPlanType: planTypeSchema,
-  toPlanType: z.enum(["standard", "wedding"]),
+  toPlanType: z.enum(["standard", "special"]),
 });
 export type PurchasePlanRequest = z.infer<typeof purchasePlanRequestSchema>;
 

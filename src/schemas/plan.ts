@@ -4,9 +4,9 @@ import { z } from "zod/v3";
  * プランタイプ
  * - `free`: Free プラン
  * - `standard`: Standard プラン
- * - `wedding`: Wedding プラン
+ * - `special`: Special プラン
  */
-export const planTypeSchema = z.enum(["free", "standard", "wedding"]);
+export const planTypeSchema = z.enum(["free", "standard", "special"]);
 export type PlanType = z.infer<typeof planTypeSchema>;
 
 /** プラン情報。free の場合は expiredAt が null */
@@ -22,7 +22,7 @@ export const partyPlanSchema = z.discriminatedUnion("currentPlan", [
     expiredAt: z.string().date(),
   }),
   z.object({
-    currentPlan: z.literal("wedding"),
+    currentPlan: z.literal("special"),
     startedAt: z.string().date(),
     expiredAt: z.string().date(),
   }),
