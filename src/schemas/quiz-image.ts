@@ -1,10 +1,13 @@
 import { z } from "zod/v3";
+import { mediaTypeSchema } from "./quiz";
 
-// ── 画像アップロード用 presigned URL の発行 ──
+// ── メディア（画像・動画）アップロード用 presigned URL の発行 ──
 //
-// FE は画像を R2 に直接アップロードする。保存前に、必要枚数ぶんの
+// FE はメディアを R2 に直接アップロードする。保存前に、必要数ぶんの
 // presigned PUT URL をまとめて要求する。
 // - key はサーバーが採番（クライアントに任意パスを切らせない）。
+// - 各アップロードで mediaType（画像 / 動画）を指定する。サーバーはこれに
+//   応じて許可する content-type や最大サイズを署名に含める。
 // - FE は各 uploadUrl に File を並列 PUT → 得た key を imageKey として
 //   クイズ編集（PUT /questions）に詰める。
 // - レスポンスの配列順は要求順に対応する。
@@ -19,11 +22,15 @@ export type CreateImageUploadUrlsParams = z.infer<
 
 /**
  * POST /party/:partyId/quiz-images/presign のリクエストボディ
- * これからアップロードする画像の枚数。
+ * これからアップロードするメディアの一覧。各要素で種別（画像 / 動画）を指定する。
+ * 配列長がアップロード数になる。
  */
 export const createImageUploadUrlsRequestSchema = z.object({
   //一つの質問に4枚、30問として合計で120枚なので、一旦130にしておく
-  count: z.number().int().positive().max(130),
+  uploads: z
+    .array(z.object({ mediaType: mediaTypeSchema }))
+    .min(1)
+    .max(130),
 });
 export type CreateImageUploadUrlsRequest = z.infer<
   typeof createImageUploadUrlsRequestSchema

@@ -1,5 +1,9 @@
 import { z } from "zod/v3";
-import { questionTextSizeSchema, quizPlayModeSchema } from "./quiz";
+import {
+  mediaTypeSchema,
+  questionTextSizeSchema,
+  quizPlayModeSchema,
+} from "./quiz";
 
 // ══════════════════════════════════════════════════════════════════════════
 // クイズ実行(Durable Object)用スキーマ
@@ -147,6 +151,8 @@ export type QuizSessionPhase = z.infer<typeof quizSessionPhaseSchema>;
 const publicTextChoiceSchema = z.object({ text: z.string() });
 const publicPhotoTextChoiceSchema = z.object({
   text: z.string(),
+  /** imageUrl が指すメディアの種別（画像 / 動画） */
+  mediaType: mediaTypeSchema,
   /** 表示用 presigned URL */
   imageUrl: z.string().url(),
 });
@@ -154,6 +160,8 @@ const publicPhotoTextChoiceSchema = z.object({
 const publicPhotoTextQuestionContentSchema = z.object({
   text: z.string(),
   textSize: questionTextSizeSchema,
+  /** imageUrl が指すメディアの種別（画像 / 動画） */
+  mediaType: mediaTypeSchema,
   imageUrl: z.string().url(),
 });
 const publicTextQuestionContentSchema = z.object({
