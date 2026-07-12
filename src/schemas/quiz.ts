@@ -276,38 +276,45 @@ export type UpdateQuizQuestionsParams = z.infer<
 /**
  * PUT /party/:partyId/quizzes/:quizId/questions のリクエストボディ
  *
+ * 問題編集と同時にクイズの基本設定（name / durationMinutes / playMode）も更新する。
  * 表示順は各質問の displayOrder で明示的に指定する。質問数の上限は設けない。
  * 「当日確定 ↔ isCorrect」の整合は discriminated union で表せないため superRefine で検証する。
  */
-export const updateQuizQuestionsRequestSchema = z.object({
-  questions: z
-    .array(quizQuestionInputSchema)
-    .min(1, "質問を最低1つ指定してください")
-    .superRefine((questions, ctx) => {
-      questions.forEach((q, i) => {
-        const choices = Object.values(q.choices);
-        if (q.isAnswerDecidedOnDay) {
-          // 当日確定: isCorrect は全て null
-          if (choices.some((c) => c.isCorrect !== null)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: [i, "choices"],
-              message: "当日確定の質問では isCorrect を null にしてください",
-            });
+export const updateQuizQuestionsRequestSchema = quizBaseSchema
+  .pick({
+    name: true,
+    durationMinutes: true,
+    playMode: true,
+  })
+  .extend({
+    questions: z
+      .array(quizQuestionInputSchema)
+      .min(1, "質問を最低1つ指定してください")
+      .superRefine((questions, ctx) => {
+        questions.forEach((q, i) => {
+          const choices = Object.values(q.choices);
+          if (q.isAnswerDecidedOnDay) {
+            // 当日確定: isCorrect は全て null
+            if (choices.some((c) => c.isCorrect !== null)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [i, "choices"],
+                message: "当日確定の質問では isCorrect を null にしてください",
+              });
+            }
+          } else {
+            // 事前確定: 最低1つは true
+            if (!choices.some((c) => c.isCorrect === true)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [i, "choices"],
+                message: "正解を最低1つ指定してください",
+              });
+            }
           }
-        } else {
-          // 事前確定: 最低1つは true
-          if (!choices.some((c) => c.isCorrect === true)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: [i, "choices"],
-              message: "正解を最低1つ指定してください",
-            });
-          }
-        }
-      });
-    }),
-});
+        });
+      }),
+  });
 export type UpdateQuizQuestionsRequest = z.infer<
   typeof updateQuizQuestionsRequestSchema
 >;
