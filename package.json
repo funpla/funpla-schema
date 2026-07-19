@@ -1,6 +1,6 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {
@@ -37,6 +37,11 @@
       "import": "./dist/bingo.js",
       "require": "./dist/bingo.cjs",
       "types": "./dist/schemas/bingo.d.ts"
+    },
+    "./bingo-do": {
+      "import": "./dist/bingo-do.js",
+      "require": "./dist/bingo-do.cjs",
+      "types": "./dist/schemas/bingo-do.d.ts"
     }
   },
   "files": [
@@ -64,6 +69,9 @@
       ],
       "bingo": [
         "./dist/schemas/bingo.d.ts"
+      ],
+      "bingo-do": [
+        "./dist/schemas/bingo-do.d.ts"
       ]
     }
   },
