@@ -11,9 +11,10 @@ export type PurchaseBingoCardsParams = z.infer<
 /**
  * POST /party/:partyId/bingo-cards/checkout のリクエストボディ
  * - `packCount`: 購入するパック数（1 パック = 10 枚 / 110 円）。ビンゴ中の追加購入も同じ経路。
+ *   1 回の購入は最大 30 パック（＝300 枚）までとする。
  */
 export const purchaseBingoCardsRequestSchema = z.object({
-  packCount: z.number().int().positive(),
+  packCount: z.number().int().positive().max(30),
 });
 export type PurchaseBingoCardsRequest = z.infer<
   typeof purchaseBingoCardsRequestSchema
