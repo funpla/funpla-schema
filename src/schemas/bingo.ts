@@ -12,9 +12,14 @@ export type PurchaseBingoCardsParams = z.infer<
  * POST /party/:partyId/bingo-cards/checkout のリクエストボディ
  * - `packCount`: 購入するパック数（1 パック = 10 枚 / 110 円）。ビンゴ中の追加購入も同じ経路。
  *   1 回の購入は最大 30 パック（＝300 枚）までとする。
+ * - `successUrl`: 決済成功後に Stripe から戻る URL。購入した画面へ戻すためにクライアントが指定する。
+ * - `cancelUrl`: 決済キャンセル後に Stripe から戻る URL。同上。
+ *   オープンリダイレクト防止のため、バックエンドは自オリジンの URL かどうかを検証すること。
  */
 export const purchaseBingoCardsRequestSchema = z.object({
   packCount: z.number().int().positive().max(30),
+  successUrl: z.string().url(),
+  cancelUrl: z.string().url(),
 });
 export type PurchaseBingoCardsRequest = z.infer<
   typeof purchaseBingoCardsRequestSchema
