@@ -24,30 +24,15 @@ const partyBaseSchema = z.object({
   eventType: eventTypeSchema,
   startDate: z.string().date(),
   startTime: z.string().time({ precision: 0 }),
-  endDate: z.string().date(),
-  endTime: z.string().time({ precision: 0 }),
   guestCount: z.number().int().positive(),
   feeType: feeTypeSchema,
   fee: z.number().int().nonnegative().nullable(),
   /** 一人当たりの場合の総予算。feeType が per_person のとき必須 */
   budget: z.number().int().nonnegative().nullable(),
-  memo: z.string().max(200).nullable(),
+  description: z.string().max(200).nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
-
-const validateDateTimeRange = (data: {
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-}) =>
-  new Date(`${data.startDate}T${data.startTime}`) <=
-  new Date(`${data.endDate}T${data.endTime}`);
-
-const dateTimeRangeError = {
-  message: "終了日時は開始日時より後にしてください",
-};
 
 const validateBudget = (
   data: { feeType: string; fee: number | null; budget: number | null },
@@ -66,15 +51,12 @@ const validateBudget = (
   }
 };
 
-export const partySchema = partyBaseSchema
-  .refine(validateDateTimeRange, dateTimeRangeError)
-  .superRefine(validateBudget);
+export const partySchema = partyBaseSchema.superRefine(validateBudget);
 export type Party = z.infer<typeof partySchema>;
 
 /** POST /party のリクエストボディ */
 export const createPartyRequestSchema = partyBaseSchema
   .omit({ id: true, createdAt: true, updatedAt: true })
-  .refine(validateDateTimeRange, dateTimeRangeError)
   .superRefine(validateBudget);
 export type CreatePartyRequest = z.infer<typeof createPartyRequestSchema>;
 
@@ -99,7 +81,6 @@ export type UpdatePartyParams = z.infer<typeof updatePartyParamsSchema>;
 /** PUT /party/:id のリクエストボディ */
 export const updatePartyRequestSchema = partyBaseSchema
   .omit({ id: true, createdAt: true, updatedAt: true })
-  .refine(validateDateTimeRange, dateTimeRangeError)
   .superRefine(validateBudget);
 export type UpdatePartyRequest = z.infer<typeof updatePartyRequestSchema>;
 
