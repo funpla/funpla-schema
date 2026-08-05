@@ -200,6 +200,17 @@ export const bingoDrawEventSchema = bingoDrawPayloadSchema.extend({
 });
 export type BingoDrawEvent = z.infer<typeof bingoDrawEventSchema>;
 
+// ── 効果音（共通部品）───────────────────────────────────────────────────────
+
+/**
+ * 操作者（host）が再生画面（display）で任意タイミングに鳴らせる効果音の種類。
+ * 抽選演出とは独立し、host が play_sound コマンドで指定 → サーバーが display へ中継する。
+ * 音源ファイルは frontend の public/sound/ 配下に対応（
+ *   ping_pong → ping-pong.wav（正解）/ horn → horn.wav（不正解）/ fanfare → fanfare.wav）。
+ */
+export const bingoSoundEffectSchema = z.enum(["ping_pong", "horn", "fanfare"]);
+export type BingoSoundEffect = z.infer<typeof bingoSoundEffectSchema>;
+
 // ══════════════════════════════════════════════════════════════════════════
 // host（操作画面）: 送信 = コマンド / 受信 = 進行用 state
 // ══════════════════════════════════════════════════════════════════════════
@@ -221,11 +232,22 @@ export type BingoSetManualReachNumbers = z.infer<
   typeof bingoSetManualReachNumbersSchema
 >;
 
+/**
+ * 再生画面（display）で効果音を鳴らす。操作者が任意タイミングで押す（抽選演出とは独立）。
+ * サーバーは対応する play_sound イベントを display へ中継する。
+ */
+export const bingoPlaySoundSchema = z.object({
+  type: z.literal("play_sound"),
+  sound: bingoSoundEffectSchema,
+});
+export type BingoPlaySound = z.infer<typeof bingoPlaySoundSchema>;
+
 /** host が送るコマンド */
 export const bingoSessionHostCommandSchema = z.discriminatedUnion("type", [
   bingoDrawSchema,
   bingoRevealSchema,
   bingoSetManualReachNumbersSchema,
+  bingoPlaySoundSchema,
 ]);
 export type BingoSessionHostCommand = z.infer<
   typeof bingoSessionHostCommandSchema
@@ -323,12 +345,23 @@ export type BingoSessionDisplayState = z.infer<
   typeof bingoSessionDisplayStateSchema
 >;
 
-/** display が受信する全メッセージ（state スナップショット + draw イベント + error） */
+/**
+ * 効果音再生イベント。host の play_sound コマンドを受けてサーバーが display へ中継する。
+ * display はこれを受けた瞬間に対応音源を再生する一過性イベント（state には含めない）。
+ */
+export const bingoPlaySoundEventSchema = z.object({
+  type: z.literal("play_sound"),
+  sound: bingoSoundEffectSchema,
+});
+export type BingoPlaySoundEvent = z.infer<typeof bingoPlaySoundEventSchema>;
+
+/** display が受信する全メッセージ（state スナップショット + draw / play_sound イベント + error） */
 export const bingoSessionDisplayServerMessageSchema = z.discriminatedUnion(
   "type",
   [
     bingoSessionDisplayStateSchema,
     bingoDrawEventSchema,
+    bingoPlaySoundEventSchema,
     bingoSessionErrorSchema,
   ],
 );
