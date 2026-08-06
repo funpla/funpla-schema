@@ -297,6 +297,18 @@ export const quizSessionErrorSchema = z.object({
 });
 export type QuizSessionError = z.infer<typeof quizSessionErrorSchema>;
 
+// ── 効果音（共通部品）───────────────────────────────────────────────────────
+
+/**
+ * 操作者（host）が再生画面（display）で任意タイミングに鳴らせる効果音の種類。
+ * クイズ進行（フェーズ遷移）とは独立し、host が play_sound コマンドで指定 →
+ * サーバーが display へ中継する。音源ファイルは frontend の public/sound/ 配下に対応（
+ *   ping_pong → ping-pong.wav（正解）/ horn → horn.wav（不正解）/ fanfare → fanfare.wav）。
+ * ビンゴ（bingoSoundEffect）と同じ音源セットを流用する。
+ */
+export const quizSoundEffectSchema = z.enum(["ping_pong", "horn", "fanfare"]);
+export type QuizSoundEffect = z.infer<typeof quizSoundEffectSchema>;
+
 // ══════════════════════════════════════════════════════════════════════════
 // WebSocket 接続（ロールでパスを分ける）
 //
@@ -432,6 +444,16 @@ const revealSchema = z.object({ type: z.literal("reveal") });
 const nextQuestionSchema = z.object({ type: z.literal("next_question") });
 
 /**
+ * 再生画面（display）で効果音を鳴らす。操作者が任意タイミングで押す（フェーズ遷移とは独立）。
+ * サーバーは対応する play_sound イベントを display へ中継する。
+ */
+export const quizSessionPlaySoundSchema = z.object({
+  type: z.literal("play_sound"),
+  sound: quizSoundEffectSchema,
+});
+export type QuizSessionPlaySound = z.infer<typeof quizSessionPlaySoundSchema>;
+
+/**
  * 当日確定の正解をセット（answering / closed で受理）。
  * questionType を一緒に送り choices の値域を制約する（2 択に c/d をセットできない）。
  * 正解は複数指定でき、送った choices で保存済みの正解セットを丸ごと上書きする。
@@ -448,6 +470,7 @@ const simpleHostCommandSchema = z.discriminatedUnion("type", [
   startCountdownSchema,
   revealSchema,
   nextQuestionSchema,
+  quizSessionPlaySoundSchema,
 ]);
 
 /** host（操作画面）が送るコマンド */
@@ -562,10 +585,26 @@ export type QuizSessionDisplayState = z.infer<
   typeof quizSessionDisplayStateSchema
 >;
 
-/** display が受信する全メッセージ */
+/**
+ * 効果音再生イベント。host の play_sound コマンドを受けてサーバーが display へ中継する。
+ * display はこれを受けた瞬間に対応音源を再生する一過性イベント（state には含めない）。
+ */
+export const quizSessionPlaySoundEventSchema = z.object({
+  type: z.literal("play_sound"),
+  sound: quizSoundEffectSchema,
+});
+export type QuizSessionPlaySoundEvent = z.infer<
+  typeof quizSessionPlaySoundEventSchema
+>;
+
+/** display が受信する全メッセージ（state スナップショット + play_sound イベント + error） */
 export const quizSessionDisplayServerMessageSchema = z.discriminatedUnion(
   "type",
-  [quizSessionDisplayStateSchema, quizSessionErrorSchema],
+  [
+    quizSessionDisplayStateSchema,
+    quizSessionPlaySoundEventSchema,
+    quizSessionErrorSchema,
+  ],
 );
 export type QuizSessionDisplayServerMessage = z.infer<
   typeof quizSessionDisplayServerMessageSchema
