@@ -14,9 +14,8 @@ export const MAX_DATE_POLL_CANDIDATES = 5;
 // ── 共通 ──
 
 /**
- * 候補日入力（作成・編集共通）。
+ * 候補日入力（作成時に使用）。
  * 配列順が表示順（displayOrder）になる。同一日付の重複は不可。
- * 編集時はこの日付集合で置き換える（残る日付は既存行を維持、消えた日付はその可否ごと削除）。
  */
 const candidateDatesInputSchema = z
   .array(z.string().date())
@@ -118,13 +117,11 @@ export type UpdateDatePollParams = z.infer<typeof updateDatePollParamsSchema>;
 
 /**
  * PUT /party/:partyId/date-poll のリクエストボディ
- * 送信した最終状態で置き換える。candidateDates は日付でマッチングして差分反映する
- * （残る日付は既存の可否を維持、消えた日付はその候補日・可否ごと削除、増えた日付は追加）。
+ * 編集できるのは説明・連絡先のみ（開催日候補は作成後は変更しない）。
  */
 export const updateDatePollRequestSchema = z.object({
   description: z.string().min(1).max(200),
   contactInfo: z.string().min(1).max(200),
-  candidateDates: candidateDatesInputSchema,
 });
 export type UpdateDatePollRequest = z.infer<typeof updateDatePollRequestSchema>;
 
