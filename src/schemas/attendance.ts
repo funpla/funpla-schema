@@ -65,6 +65,8 @@ const attendanceAnswerItemSchema = z.object({
   isAttending: z.boolean(),
   /** ウェディングオプション有効時のみ値が入る。それ以外は null */
   weddingRelationship: weddingRelationshipSchema.nullable(),
+  /** 参加者が任意で入力したメッセージ。未入力は null */
+  message: z.string().nullable(),
   createdAt: z.string().datetime(),
 });
 
@@ -183,11 +185,13 @@ export type SubmitAttendanceResponseParams = z.infer<
  * - `isAttending`: 参加(true) / 不参加(false)
  * - `weddingRelationship`: 続柄。ウェディングオプション有効時のみ必須、無効時は null
  *   （オプションの有効/無効との整合はサーバー側で検証する）
+ * - `message`: 参加者が任意で入力するメッセージ。未入力は null
  */
 export const submitAttendanceResponseRequestSchema = z.object({
   respondentName: z.string().min(1).max(50),
   isAttending: z.boolean(),
   weddingRelationship: weddingRelationshipSchema.nullable(),
+  message: z.string().max(500).nullable(),
 });
 export type SubmitAttendanceResponseRequest = z.infer<
   typeof submitAttendanceResponseRequestSchema
