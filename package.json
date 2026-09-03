@@ -1,6 +1,6 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.55",
+  "version": "0.0.56",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {
@@ -52,6 +52,11 @@
       "import": "./dist/attendance.js",
       "require": "./dist/attendance.cjs",
       "types": "./dist/schemas/attendance.d.ts"
+    },
+    "./timetable": {
+      "import": "./dist/timetable.js",
+      "require": "./dist/timetable.cjs",
+      "types": "./dist/schemas/timetable.d.ts"
     }
   },
   "files": [
@@ -88,6 +93,9 @@
       ],
       "attendance": [
         "./dist/schemas/attendance.d.ts"
+      ],
+      "timetable": [
+        "./dist/schemas/timetable.d.ts"
       ]
     }
   },
