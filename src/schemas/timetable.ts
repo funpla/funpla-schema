@@ -233,3 +233,20 @@ export const updateTimetableResponseSchema = z.object({});
 export type UpdateTimetableResponse = z.infer<
   typeof updateTimetableResponseSchema
 >;
+
+// ── 削除（DELETE /party/:partyId/timetable） ──
+//
+// タイムテーブルごと消す（プログラムとカスタム項目の詳細も一緒に消える）。
+// 削除後はパーティーのタイムテーブルが未作成の状態に戻り、作成からやり直せる。
+
+/** DELETE /party/:partyId/timetable のパスパラメータ */
+export const deleteTimetableParamsSchema = z.object({
+  partyId: z.string().uuid(),
+});
+export type DeleteTimetableParams = z.infer<typeof deleteTimetableParamsSchema>;
+
+/** DELETE /party/:partyId/timetable のレスポンスボディ */
+export const deleteTimetableResponseSchema = z.object({});
+export type DeleteTimetableResponse = z.infer<
+  typeof deleteTimetableResponseSchema
+>;
