@@ -1,6 +1,6 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.57",
+  "version": "0.0.58",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {
@@ -57,6 +57,11 @@
       "import": "./dist/timetable.js",
       "require": "./dist/timetable.cjs",
       "types": "./dist/schemas/timetable.d.ts"
+    },
+    "./roster": {
+      "import": "./dist/roster.js",
+      "require": "./dist/roster.cjs",
+      "types": "./dist/schemas/roster.d.ts"
     }
   },
   "files": [
@@ -96,6 +101,9 @@
       ],
       "timetable": [
         "./dist/schemas/timetable.d.ts"
+      ],
+      "roster": [
+        "./dist/schemas/roster.d.ts"
       ]
     }
   },
