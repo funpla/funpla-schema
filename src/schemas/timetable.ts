@@ -111,6 +111,8 @@ const timetableProgramBaseSchema = z.object({
   durationMinutes: z.number().int().positive(),
   /** 任意の備考・説明文。未入力は null */
   note: z.string().nullable(),
+  /** 司会台本の本文。未入力は null */
+  scriptBody: z.string().nullable(),
 });
 
 const standardTimetableProgramSchema = timetableProgramBaseSchema.extend({
@@ -172,6 +174,8 @@ const timetableProgramInputBaseSchema = z.object({
   durationMinutes: z.number().int().positive(),
   /** 任意の備考・説明文。未入力は null */
   note: z.string().max(200).nullable(),
+  /** 司会台本の本文。未入力は null */
+  scriptBody: z.string().max(2000).nullable(),
 });
 
 const standardTimetableProgramInputSchema =
@@ -249,4 +253,48 @@ export type DeleteTimetableParams = z.infer<typeof deleteTimetableParamsSchema>;
 export const deleteTimetableResponseSchema = z.object({});
 export type DeleteTimetableResponse = z.infer<
   typeof deleteTimetableResponseSchema
+>;
+
+// ── 司会台本の生成（POST /party/:partyId/timetable/script/generate） ──
+//
+// 1 回の呼び出しで 1 プログラム分だけ生成する。生成した本文は返すだけで保存はせず、
+// 永続化は PUT /party/:partyId/timetable で行う。
+
+/** POST /party/:partyId/timetable/script/generate のパスパラメータ */
+export const generateTimetableScriptParamsSchema = z.object({
+  partyId: z.string().uuid(),
+});
+export type GenerateTimetableScriptParams = z.infer<
+  typeof generateTimetableScriptParamsSchema
+>;
+
+/**
+ * POST /party/:partyId/timetable/script/generate のリクエストボディ
+ * `custom` は種別から内容が分からないため、表示名を合わせて送る。
+ */
+export const generateTimetableScriptRequestSchema = z.discriminatedUnion(
+  "programType",
+  [
+    z.object({
+      partySceneType: partySceneTypeSchema,
+      programType: standardTimetableProgramTypeSchema,
+    }),
+    z.object({
+      partySceneType: partySceneTypeSchema,
+      programType: z.literal("custom"),
+      /** カスタム項目の表示名 */
+      title: z.string().min(1).max(50),
+    }),
+  ],
+);
+export type GenerateTimetableScriptRequest = z.infer<
+  typeof generateTimetableScriptRequestSchema
+>;
+
+/** POST /party/:partyId/timetable/script/generate のレスポンスボディ */
+export const generateTimetableScriptResponseSchema = z.object({
+  scriptBody: z.string(),
+});
+export type GenerateTimetableScriptResponse = z.infer<
+  typeof generateTimetableScriptResponseSchema
 >;
