@@ -34,7 +34,8 @@ const partyBaseSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-const validateBudget = (
+/** 会費と別途予算の整合性チェック。パーティー設定と資金管理で共通 */
+export const validateBudget = (
   data: { feeType: string; fee: number | null; budget: number | null },
   ctx: z.RefinementCtx,
 ) => {
