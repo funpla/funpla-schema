@@ -18,17 +18,20 @@ export type EventType = z.infer<typeof eventTypeSchema>;
 export const feeTypeSchema = z.enum(["per_person", "total"]);
 export type FeeType = z.infer<typeof feeTypeSchema>;
 
+/** 金額・人数の上限。保存先が PostgreSQL の integer 列のため */
+export const MAX_AMOUNT = 2147483647;
+
 const partyBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(50),
   eventType: eventTypeSchema,
   startDate: z.string().date(),
   startTime: z.string().time({ precision: 0 }),
-  guestCount: z.number().int().positive(),
+  guestCount: z.number().int().positive().max(MAX_AMOUNT),
   feeType: feeTypeSchema,
-  fee: z.number().int().nonnegative().nullable(),
+  fee: z.number().int().nonnegative().max(MAX_AMOUNT).nullable(),
   /** 一人当たりの場合の総予算。feeType が per_person のとき必須 */
-  budget: z.number().int().nonnegative().nullable(),
+  budget: z.number().int().nonnegative().max(MAX_AMOUNT).nullable(),
   description: z.string().max(200).nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

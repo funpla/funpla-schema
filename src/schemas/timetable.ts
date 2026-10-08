@@ -51,7 +51,8 @@ export type PartySceneType = z.infer<typeof partySceneTypeSchema>;
  * - `party_start`: パーティースタート
  * - `couple_entry`: 新郎新婦入場
  * - `surprise_entry`: サプライズ入場
- * - `toast`: 乾杯
+ * - `toast_by_host`: 乾杯（乾杯発声：司会者）
+ * - `toast_by_guest`: 乾杯（乾杯発声：参加者）
  * - `chat`: 歓談
  * - `bingo`: FunBINGO
  * - `quiz`: クイズ
@@ -74,7 +75,8 @@ export const standardTimetableProgramTypeSchema = z.enum([
   "party_start",
   "couple_entry",
   "surprise_entry",
-  "toast",
+  "toast_by_host",
+  "toast_by_guest",
   "chat",
   "bingo",
   "quiz",

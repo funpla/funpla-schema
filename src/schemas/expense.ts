@@ -1,5 +1,5 @@
 import { z } from "zod/v3";
-import { feeTypeSchema, validateBudget } from "./party";
+import { feeTypeSchema, MAX_AMOUNT, validateBudget } from "./party";
 import { planTypeSchema } from "./plan";
 
 /**
@@ -27,7 +27,7 @@ export const venueCostTypeSchema = z.enum(["per_person", "total"]);
 export type VenueCostType = z.infer<typeof venueCostTypeSchema>;
 
 /** 経費の金額。未入力は null（0 円と区別する） */
-const costSchema = z.number().int().nonnegative().nullable();
+const costSchema = z.number().int().nonnegative().max(MAX_AMOUNT).nullable();
 
 /**
  * 収入側。パーティー設定（人数・会費）と同じ値で、資金管理から更新すると
@@ -38,10 +38,10 @@ const costSchema = z.number().int().nonnegative().nullable();
  * - `budget`: 別途予算（未入力は null）
  */
 const incomeSchema = z.object({
-  guestCount: z.number().int().positive(),
+  guestCount: z.number().int().positive().max(MAX_AMOUNT),
   feeType: feeTypeSchema,
-  fee: z.number().int().nonnegative().nullable(),
-  budget: z.number().int().nonnegative().nullable(),
+  fee: z.number().int().nonnegative().max(MAX_AMOUNT).nullable(),
+  budget: z.number().int().nonnegative().max(MAX_AMOUNT).nullable(),
 });
 
 /**
