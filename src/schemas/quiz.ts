@@ -142,12 +142,22 @@ const textChoiceSchema = z.object({
   isCorrect: z.boolean().nullable(),
 });
 
+/** 正解発表時に差し替える選択肢画像（選択肢は画像のみ） */
+const revealChoiceImageSchema = z.object({
+  /** 保存・編集で使う正準値 */
+  imageKey: z.string(),
+  /** imageKey から生成した表示用 presigned URL */
+  imageUrl: z.string().url(),
+});
+
 /** 選択肢（写真+テキスト）— 写真が選択肢側のとき（選択肢は画像のみ） */
 const photoTextChoiceSchema = textChoiceSchema.extend({
   /** 保存・編集で使う正準値（choice_*_image_key） */
   imageKey: z.string(),
   /** imageKey から生成した表示用 presigned URL */
   imageUrl: z.string().url(),
+  /** 正解発表時に差し替える画像。null なら差し替えず imageUrl のまま表示する */
+  revealImage: revealChoiceImageSchema.nullable(),
 });
 
 /**
@@ -159,6 +169,15 @@ const photoTextChoiceSchema = textChoiceSchema.extend({
 export const questionTextSizeSchema = z.enum(["small", "medium", "large"]);
 export type QuestionTextSize = z.infer<typeof questionTextSizeSchema>;
 
+/** 正解発表時に差し替える問題のメディア（画像 / 動画） */
+const revealQuestionMediaSchema = z.object({
+  mediaType: mediaTypeSchema,
+  /** 保存・編集で使う正準値 */
+  imageKey: z.string(),
+  /** imageKey から生成した表示用 presigned URL */
+  imageUrl: z.string().url(),
+});
+
 const photoTextQuestionContentSchema = z.object({
   text: z.string(),
   textSize: questionTextSizeSchema,
@@ -168,6 +187,8 @@ const photoTextQuestionContentSchema = z.object({
   imageKey: z.string(),
   /** imageKey から生成した表示用 presigned URL */
   imageUrl: z.string().url(),
+  /** 正解発表時に差し替えるメディア。null なら差し替えず imageUrl のまま表示する */
+  revealMedia: revealQuestionMediaSchema.nullable(),
 });
 
 const textQuestionContentSchema = z.object({
@@ -246,6 +267,9 @@ export type GetQuizResponse = z.infer<typeof getQuizResponseSchema>;
 //   questionType はサーバー側で不変前提として扱う。
 // - 入力では画像を presigned URL ではなく R2 の key（imageKey）で受け取る。
 // - 表示順は displayOrder で明示的に送る。
+// - 正解発表時の差し替えメディアも key で受け取る。null は「差し替えない」。
+//   設定画面のトグルは保存せず、差し替えメディアの有無で表す
+//   （写真＝問題は question.revealMedia、写真＝選択肢は各 choice の revealImageKey）。
 
 /** 選択肢（テキストのみ）入力 — 写真が問題側のとき */
 const textChoiceInputSchema = z.object({
@@ -257,6 +281,8 @@ const textChoiceInputSchema = z.object({
 /** 選択肢（写真+テキスト）入力 — 写真が選択肢側のとき（選択肢は画像のみ） */
 const photoTextChoiceInputSchema = textChoiceInputSchema.extend({
   imageKey: z.string(),
+  /** 正解発表時に差し替える画像の key。null なら差し替えない */
+  revealImageKey: z.string().nullable(),
 });
 
 /** 問題文（テキストのみ）入力 — 写真が選択肢側の種別 */
@@ -271,6 +297,10 @@ const photoTextQuestionContentInputSchema =
     /** imageKey が指すメディアの種別（画像 / 動画） */
     mediaType: mediaTypeSchema,
     imageKey: z.string(),
+    /** 正解発表時に差し替えるメディア。null なら差し替えない */
+    revealMedia: z
+      .object({ mediaType: mediaTypeSchema, imageKey: z.string() })
+      .nullable(),
   });
 
 const questionInputBaseSchema = z.object({

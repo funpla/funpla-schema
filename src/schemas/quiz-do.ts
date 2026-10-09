@@ -57,6 +57,8 @@ import {
 //     ↓ [host] next_question（最後なら finished）
 //
 // ※ 正解(correctChoice)は participant / display には revealed になるまで配信しない。
+// ※ 正解発表時の差し替えメディア(revealMedia)も正解が推測できるため、
+//   全ロールとも revealed のときだけ配信する。
 // ══════════════════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -213,6 +215,25 @@ export const publicQuizQuestionSchema = z.discriminatedUnion("questionType", [
 ]);
 export type PublicQuizQuestion = z.infer<typeof publicQuizQuestionSchema>;
 
+/**
+ * 正解発表時に差し替えるメディア（表示用 presigned URL）。
+ * 問題・選択肢それぞれ、差し替えないものは null。描画側は null なら元のメディアを表示する。
+ */
+export const quizRevealMediaSchema = z.object({
+  /** 問題のメディアの差し替え（写真＝問題の種別のみ） */
+  question: z
+    .object({ mediaType: mediaTypeSchema, imageUrl: z.string().url() })
+    .nullable(),
+  /** 選択肢画像の差し替え（写真＝選択肢の種別のみ。選択肢は画像のみ） */
+  choices: z.object({
+    a: z.string().url().nullable(),
+    b: z.string().url().nullable(),
+    c: z.string().url().nullable(),
+    d: z.string().url().nullable(),
+  }),
+});
+export type QuizRevealMedia = z.infer<typeof quizRevealMediaSchema>;
+
 /** すべての受信 state に共通する骨格 */
 const sessionStateBaseSchema = z.object({
   type: z.literal("state"),
@@ -228,6 +249,11 @@ const sessionStateBaseSchema = z.object({
   question: publicQuizQuestionSchema.nullable(),
   /** answering のときの回答締切時刻(ISO)。残り秒は各自が算出。それ以外は null */
   endsAt: z.string().datetime().nullable(),
+  /**
+   * 正解発表時に差し替えるメディア。revealed のときだけ載る（それ以外は null）。
+   * revealed でも差し替えが 1 つも無い問題は null。
+   */
+  revealMedia: quizRevealMediaSchema.nullable(),
 });
 
 /** ランキング表示用の参加者サマリ（host / display のみ。participantId は含めない） */
