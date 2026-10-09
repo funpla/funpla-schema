@@ -58,7 +58,11 @@ export const createQuizRequestSchema = quizBaseSchema.pick({
 });
 export type CreateQuizRequest = z.infer<typeof createQuizRequestSchema>;
 
-/** POST /party/:partyId/quizzes のレスポンスボディ */
+/**
+ * POST /party/:partyId/quizzes のレスポンスボディ
+ *
+ * 作成済みのクイズ数がパーティーの作成上限（`maxQuizCount`）に達している場合は 409 を返す。
+ */
 export const createQuizResponseSchema = z.object({ id: z.string().uuid() });
 export type CreateQuizResponse = z.infer<typeof createQuizResponseSchema>;
 
@@ -68,15 +72,60 @@ export const listQuizzesParamsSchema = z.object({
 });
 export type ListQuizzesParams = z.infer<typeof listQuizzesParamsSchema>;
 
-/** GET /party/:partyId/quizzes のレスポンスボディ */
+/**
+ * GET /party/:partyId/quizzes のレスポンスボディ
+ * - `maxQuizCount`: このパーティーで作成できるクイズ数の上限。
+ *   基本の 1 個に、作成枠の購入（POST /party/:partyId/quizzes/slots/checkout）で増えた分を足した値。
+ *   クイズを削除すると枠が空くため、`quizzes.length < maxQuizCount` なら作成できる。
+ */
 export const listQuizzesResponseSchema = z.object({
   quizzes: z.array(
     quizBaseSchema.and(
       z.object({ questionCount: z.number().int().nonnegative() }),
     ),
   ),
+  maxQuizCount: z.number().int().positive(),
 });
 export type ListQuizzesResponse = z.infer<typeof listQuizzesResponseSchema>;
+
+// ── クイズ作成枠の購入（POST /party/:partyId/quizzes/slots/checkout） ──
+//
+// パーティーごとのクイズ作成上限（基本 1 個）を、1 枠 1,000 円（税込）の個別課金で増やす。
+// Stripe Checkout の決済ページ URL を返すだけで、枠の付与は決済完了の webhook で行う。
+// 購入した枠はそのパーティーに永続的に加算され、クイズを削除しても減らない。
+
+/** POST /party/:partyId/quizzes/slots/checkout のパスパラメータ */
+export const purchaseQuizSlotsParamsSchema = z.object({
+  partyId: z.string().uuid(),
+});
+export type PurchaseQuizSlotsParams = z.infer<
+  typeof purchaseQuizSlotsParamsSchema
+>;
+
+/**
+ * POST /party/:partyId/quizzes/slots/checkout のリクエストボディ
+ * - `slotCount`: 購入する作成枠の数（1 枠 = 1,000 円）。1 回の購入は最大 10 枠まで。
+ * - `successUrl`: 決済成功後に Stripe から戻る URL。購入した画面へ戻すためにクライアントが指定する。
+ * - `cancelUrl`: 決済キャンセル後に Stripe から戻る URL。同上。
+ *   オープンリダイレクト防止のため、バックエンドは自オリジンの URL かどうかを検証すること。
+ */
+export const purchaseQuizSlotsRequestSchema = z.object({
+  slotCount: z.number().int().positive().max(10),
+  successUrl: z.string().url(),
+  cancelUrl: z.string().url(),
+});
+export type PurchaseQuizSlotsRequest = z.infer<
+  typeof purchaseQuizSlotsRequestSchema
+>;
+
+/**
+ * POST /party/:partyId/quizzes/slots/checkout のレスポンスボディ
+ * - `url`: 決済ページの URL
+ */
+export const purchaseQuizSlotsResponseSchema = z.object({ url: z.string() });
+export type PurchaseQuizSlotsResponse = z.infer<
+  typeof purchaseQuizSlotsResponseSchema
+>;
 
 const questionBaseSchema = z.object({
   id: z.string().uuid(),
