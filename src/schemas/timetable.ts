@@ -300,3 +300,38 @@ export const generateTimetableScriptResponseSchema = z.object({
 export type GenerateTimetableScriptResponse = z.infer<
   typeof generateTimetableScriptResponseSchema
 >;
+
+// ── 司会台本の保存（PUT /party/:partyId/timetable/programs/:programId/script） ──
+//
+// 司会台本タブから 1 プログラム分の台本だけを保存する。タイムテーブル全体の PUT と違い、
+// プログラムの総入れ替えはせず scriptBody のみを更新する（id も変わらない）。
+// programId は GET /party/:partyId/timetable で返る id。タイムテーブル全体の PUT で
+// プログラムが入れ替わった後の古い id や、別パーティーのプログラムの id は 404 を返す。
+
+/** PUT /party/:partyId/timetable/programs/:programId/script のパスパラメータ */
+export const updateTimetableScriptParamsSchema = z.object({
+  partyId: z.string().uuid(),
+  programId: z.string().uuid(),
+});
+export type UpdateTimetableScriptParams = z.infer<
+  typeof updateTimetableScriptParamsSchema
+>;
+
+/**
+ * PUT /party/:partyId/timetable/programs/:programId/script のリクエストボディ
+ * - `scriptBody`: 司会台本の本文。null で台本を削除する
+ */
+export const updateTimetableScriptRequestSchema = z.object({
+  scriptBody: z.string().max(2000).nullable(),
+});
+export type UpdateTimetableScriptRequest = z.infer<
+  typeof updateTimetableScriptRequestSchema
+>;
+
+/** PUT /party/:partyId/timetable/programs/:programId/script のレスポンスボディ */
+export const updateTimetableScriptResponseSchema = z.object({
+  scriptBody: z.string().nullable(),
+});
+export type UpdateTimetableScriptResponse = z.infer<
+  typeof updateTimetableScriptResponseSchema
+>;
