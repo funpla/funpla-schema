@@ -127,6 +127,46 @@ export type PurchaseQuizSlotsResponse = z.infer<
   typeof purchaseQuizSlotsResponseSchema
 >;
 
+// ── クイズ作成枠の購入履歴（GET /party/:partyId/quizzes/slots/purchases） ──
+//
+// 作成枠の購入（Stripe 決済完了で記録されたもの）を新しい順に返す。
+// 決済ページを開いただけで完了していない購入は含まない。
+
+/** GET /party/:partyId/quizzes/slots/purchases のパスパラメータ */
+export const listQuizSlotPurchasesParamsSchema = z.object({
+  partyId: z.string().uuid(),
+});
+export type ListQuizSlotPurchasesParams = z.infer<
+  typeof listQuizSlotPurchasesParamsSchema
+>;
+
+/**
+ * 作成枠の購入 1 件
+ * - `quantity`: 購入した枠数
+ * - `amount`: 支払金額（税込・JPY）
+ * - `paidAt`: 支払日時
+ */
+export const quizSlotPurchaseItemSchema = z.object({
+  id: z.string().uuid(),
+  quantity: z.number().int().positive(),
+  amount: z.number().int().nonnegative(),
+  paidAt: z.string().datetime(),
+});
+export type QuizSlotPurchaseItem = z.infer<typeof quizSlotPurchaseItemSchema>;
+
+/**
+ * GET /party/:partyId/quizzes/slots/purchases のレスポンスボディ
+ * - `purchases`: 購入履歴（paidAt の新しい順）。購入が無ければ空配列
+ * - `maxQuizCount`: 現在のクイズ作成上限（GET /party/:partyId/quizzes と同じ値）
+ */
+export const listQuizSlotPurchasesResponseSchema = z.object({
+  purchases: z.array(quizSlotPurchaseItemSchema),
+  maxQuizCount: z.number().int().positive(),
+});
+export type ListQuizSlotPurchasesResponse = z.infer<
+  typeof listQuizSlotPurchasesResponseSchema
+>;
+
 const questionBaseSchema = z.object({
   id: z.string().uuid(),
   displayOrder: z.number().int().nonnegative(),
