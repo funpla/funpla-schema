@@ -335,6 +335,30 @@ export type QuizSessionError = z.infer<typeof quizSessionErrorSchema>;
 export const quizSoundEffectSchema = z.enum(["ping_pong", "horn", "fanfare"]);
 export type QuizSoundEffect = z.infer<typeof quizSoundEffectSchema>;
 
+// ── 問題動画の再生状態（共通部品）─────────────────────────────────────────
+
+/**
+ * 問題の動画（問題メディア / 正解発表時の差し替えメディアが動画のとき）の再生状態。
+ * host が control_video コマンドで操作し、サーバーが保持して host / display の state に載せる。
+ * 両画面はこの状態に自分の <video> を合わせることで、再生・停止・再生位置を同期する。
+ *
+ * 端末間の時計のずれを避けるため、絶対時刻は持たない。positionSeconds は「サーバーがこの
+ * メッセージを組み立てた時点の再生位置」で、playing なら受信側は受信時刻からの経過分を足して扱う。
+ * - `playing`: 再生中
+ * - `paused`: 一時停止中（positionSeconds の位置で止まっている）
+ */
+export const quizVideoPlaybackStatusSchema = z.enum(["playing", "paused"]);
+export type QuizVideoPlaybackStatus = z.infer<
+  typeof quizVideoPlaybackStatusSchema
+>;
+
+export const quizVideoPlaybackSchema = z.object({
+  status: quizVideoPlaybackStatusSchema,
+  /** メッセージ組み立て時点の再生位置（秒） */
+  positionSeconds: z.number().nonnegative(),
+});
+export type QuizVideoPlayback = z.infer<typeof quizVideoPlaybackSchema>;
+
 // ══════════════════════════════════════════════════════════════════════════
 // WebSocket 接続（ロールでパスを分ける）
 //
@@ -491,12 +515,30 @@ export type QuizSessionSetCorrectAnswer = z.infer<
   typeof quizSessionSetCorrectAnswerSchema
 >;
 
+/**
+ * 問題の動画を操作する（再生画面の動画を操作画面から再生・停止・シークする）。
+ * 現在表示中の問題メディアが動画のとき（question / answering / closed / revealed）だけ受理する。
+ * - `play`: positionSeconds の位置から再生する
+ * - `pause`: positionSeconds の位置で停止する
+ * - `seek`: 再生 / 停止の状態は変えずに positionSeconds へ移動する
+ * positionSeconds は操作画面の動画の現在位置を送る（終端を超えた値は各画面の動画側で丸められる）。
+ */
+export const quizSessionControlVideoSchema = z.object({
+  type: z.literal("control_video"),
+  action: z.enum(["play", "pause", "seek"]),
+  positionSeconds: z.number().nonnegative(),
+});
+export type QuizSessionControlVideo = z.infer<
+  typeof quizSessionControlVideoSchema
+>;
+
 /** type で判別できる単純な host コマンド（set_correct_answer 以外） */
 const simpleHostCommandSchema = z.discriminatedUnion("type", [
   startCountdownSchema,
   revealSchema,
   nextQuestionSchema,
   quizSessionPlaySoundSchema,
+  quizSessionControlVideoSchema,
 ]);
 
 /** host（操作画面）が送るコマンド */
@@ -524,6 +566,11 @@ export const quizSessionHostStateSchema = sessionStateBaseSchema.extend({
   answerTally: answerTallySchema.nullable(),
   /** 参加者一覧（ランキング用） */
   participants: z.array(quizSessionParticipantSchema),
+  /**
+   * 問題の動画の再生状態。現在表示中の問題メディアが動画でなければ null。
+   * 動画に切り替わった直後（未操作）は先頭で停止した状態として返す。
+   */
+  videoPlayback: quizVideoPlaybackSchema.nullable(),
 });
 export type QuizSessionHostState = z.infer<typeof quizSessionHostStateSchema>;
 
@@ -606,6 +653,8 @@ export const quizSessionDisplayStateSchema = sessionStateBaseSchema.extend({
   answerTally: answerTallySchema.nullable(),
   /** 参加者一覧（ランキング表示用） */
   participants: z.array(quizSessionParticipantSchema),
+  /** 問題の動画の再生状態（host と同じ値）。再生画面の動画はこれに合わせて再生・停止する */
+  videoPlayback: quizVideoPlaybackSchema.nullable(),
 });
 export type QuizSessionDisplayState = z.infer<
   typeof quizSessionDisplayStateSchema
