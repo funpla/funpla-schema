@@ -92,6 +92,21 @@ export type UpdatePartyRequest = z.infer<typeof updatePartyRequestSchema>;
 export const updatePartyResponseSchema = z.object({});
 export type UpdatePartyResponse = z.infer<typeof updatePartyResponseSchema>;
 
+// ── 削除（DELETE /party/:id） ──
+//
+// パーティーと、それに紐づくデータ（プラン・クイズ・ビンゴ・日程調整・出欠・名簿・
+// タイムテーブル・資金管理・画像・動画）をまとめて削除する。復元はできない。
+// 購入記録（プラン履歴・クイズ作成枠・QRビンゴカード）は法令上の保存義務があるため、
+// パーティーとの紐付けだけを外して残す（退会時と同じ扱い）。
+
+/** DELETE /party/:id のパスパラメータ */
+export const deletePartyParamsSchema = partyBaseSchema.pick({ id: true });
+export type DeletePartyParams = z.infer<typeof deletePartyParamsSchema>;
+
+/** DELETE /party/:id のレスポンスボディ */
+export const deletePartyResponseSchema = z.object({});
+export type DeletePartyResponse = z.infer<typeof deletePartyResponseSchema>;
+
 /** GET /party のリクエストクエリ */
 export const listPartiesRequestSchema = z.object({});
 export type ListPartiesRequest = z.infer<typeof listPartiesRequestSchema>;
