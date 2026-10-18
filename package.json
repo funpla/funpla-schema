@@ -1,6 +1,6 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.68",
+  "version": "0.0.69",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {
@@ -67,6 +67,11 @@
       "import": "./dist/expense.js",
       "require": "./dist/expense.cjs",
       "types": "./dist/schemas/expense.d.ts"
+    },
+    "./settings": {
+      "import": "./dist/settings.js",
+      "require": "./dist/settings.cjs",
+      "types": "./dist/settings.d.ts"
     }
   },
   "files": [
@@ -112,6 +117,9 @@
       ],
       "expense": [
         "./dist/schemas/expense.d.ts"
+      ],
+      "settings": [
+        "./dist/settings.d.ts"
       ]
     }
   },
