@@ -57,6 +57,10 @@ export type MaintenanceState = z.infer<typeof maintenanceStateSchema>;
  * - `scope`: 止める範囲。省略時は `["all"]` で全機能
  * - `message`: 追加で表示する文言。null なら固定文言のみ
  * - `plannedEndAt`: 終了予定時刻(ISO8601)。**表示専用**で判定には使わない。null なら出さない
+ * - `bypassToken`: 解除前に運用者だけ通すためのトークン。管理画面が生成する。null なら bypass 不可
+ *
+ * bypass トークンをここに持たせているのは、メンテナンスと完全に同じライフサイクルだから。
+ * off ブランチは `state` しか持たないため、解除した時点でトークンも自動的に消える。
  *
  * 「誰がいつ変えたか」は持たない。監査は履歴テーブル側の担当。
  */
@@ -69,6 +73,7 @@ export const maintenanceSettingsSchema = z.discriminatedUnion("state", [
     scope: z.array(maintenanceScopeSchema).min(1).default(["all"]),
     message: z.string().min(1).nullable().default(null),
     plannedEndAt: z.string().datetime().nullable().default(null),
+    bypassToken: z.string().min(32).nullable().default(null),
   }),
 ]);
 export type MaintenanceSettings = z.infer<typeof maintenanceSettingsSchema>;
@@ -111,3 +116,23 @@ export const bannerSettingsSchema = z.discriminatedUnion("state", [
   }),
 ]);
 export type BannerSettings = z.infer<typeof bannerSettingsSchema>;
+
+/**
+ * bypass トークンを載せる cookie 名。
+ * frontend の middleware が発行し、frontend と backend の両方が検証する。
+ */
+export const MAINTENANCE_BYPASS_COOKIE = "funpla_mnt_bypass";
+
+/**
+ * cookie で渡ってきた bypass トークンが有効か。
+ * frontend と backend が同じ判定をする必要があるためここに置く。
+ */
+export function isBypassTokenValid(
+  settings: MaintenanceSettings,
+  token: string | undefined,
+): boolean {
+  if (settings.state !== "on" || settings.bypassToken === null || !token) {
+    return false;
+  }
+  return token === settings.bypassToken;
+}
