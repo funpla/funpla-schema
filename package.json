@@ -1,6 +1,6 @@
 {
   "name": "funpla-schema",
-  "version": "0.0.71",
+  "version": "0.0.72",
   "description": "Zod schemas and types for funpla",
   "exports": {
     "./user": {

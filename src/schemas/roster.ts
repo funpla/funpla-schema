@@ -7,6 +7,9 @@ import { z } from "zod/v3";
  * 行ごとにチェックと備考を付けていく表。カラムは名前・チェック・備考の 3 つで、
  * 名前は出欠確認の回答が正なので名簿からは編集できない。
  *
+ * 参加募集側で「集計に含める」を外した回答（isIncludedInTally = false）は名簿にも
+ * 出てこない。名簿からこの指定は変えられず、参加募集の一覧で切り替える。
+ *
  * 参加者一覧とチェック / 備考の合成はサーバー側で行い、クライアントは返ってきた行を
  * そのまま描画する。行の識別子は出欠確認の回答 id（responseId）で、名簿固有の id は
  * 持たない（チェックも備考も付いていない行はサーバー側にレコードが存在しないため）。
@@ -43,7 +46,7 @@ export type GetRosterParams = z.infer<typeof getRosterParamsSchema>;
 /**
  * GET /party/:partyId/roster のレスポンスボディ
  * - `entries`: 「参加」と回答した人だけの一覧。名前の辞書順。
- *   不参加の回答は含めない
+ *   不参加の回答と、集計対象から外した回答は含めない
  */
 export const getRosterResponseSchema = z.object({
   entries: z.array(rosterEntrySchema),
@@ -82,7 +85,8 @@ export type UpdateRosterParams = z.infer<typeof updateRosterParamsSchema>;
 /**
  * PUT /party/:partyId/roster のリクエストボディ
  * - `entries`: 保存する行（0 件も可）。同じ responseId は 1 度だけ指定できる。
- *   指定パーティーの「参加」回答でない responseId が含まれる場合は 404 を返す
+ *   指定パーティーの「参加」回答でない responseId、または集計対象から外した回答の
+ *   responseId が含まれる場合は 404 を返す
  */
 export const updateRosterRequestSchema = z.object({
   entries: z.array(rosterEntryInputSchema).superRefine((entries, ctx) => {

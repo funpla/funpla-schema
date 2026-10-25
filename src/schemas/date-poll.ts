@@ -70,9 +70,16 @@ export type CreateDatePollResponse = z.infer<
 
 // ── 取得（主催者）（GET /party/:partyId/date-poll） ──
 
-/** 回答（主催者向け一覧の 1 件）。候補日ごとの可否を持つ。 */
+/**
+ * 回答（主催者向け一覧の 1 件）。候補日ごとの可否を持つ。
+ * - `id`: 回答 id。集計対象の保存で行を指定するのに使う
+ * - `isIncludedInTally`: 集計に含めるか。既定は true で、false の回答は候補日ごとの
+ *   可否集計から外す（行自体は一覧に残す）
+ */
 const datePollAnswerItemSchema = z.object({
+  id: z.string().uuid(),
   respondentName: z.string(),
+  isIncludedInTally: z.boolean(),
   availabilities: z.array(
     z.object({
       candidateId: z.string().uuid(),
@@ -143,6 +150,61 @@ export type DeleteDatePollParams = z.infer<typeof deleteDatePollParamsSchema>;
 export const deleteDatePollResponseSchema = z.object({});
 export type DeleteDatePollResponse = z.infer<
   typeof deleteDatePollResponseSchema
+>;
+
+// ── 回答の集計対象を保存（PUT /party/:partyId/date-poll/responses） ──
+//
+// 一覧の「集計に含める」チェックをまとめて保存する。回答そのものは参加者が作るため
+// 行の追加・削除はなく、送られた回答だけを反映して送られなかった回答には手を触れない。
+// 1 件だけ保存したい場合も要素 1 件の配列で送る。
+
+/** PUT /party/:partyId/date-poll/responses のパスパラメータ */
+export const updateDatePollResponsesParamsSchema = z.object({
+  partyId: z.string().uuid(),
+});
+export type UpdateDatePollResponsesParams = z.infer<
+  typeof updateDatePollResponsesParamsSchema
+>;
+
+/**
+ * 保存する 1 件
+ * - `id`: 対象の回答 id
+ * - `isIncludedInTally`: 集計に含めるか
+ */
+const datePollResponseTallyInputSchema = z.object({
+  id: z.string().uuid(),
+  isIncludedInTally: z.boolean(),
+});
+export type DatePollResponseTallyInput = z.infer<
+  typeof datePollResponseTallyInputSchema
+>;
+
+/**
+ * PUT /party/:partyId/date-poll/responses のリクエストボディ
+ * - `responses`: 保存する回答（0 件も可）。同じ id は 1 度だけ指定できる。
+ *   指定パーティーの日程調整の回答でない id が含まれる場合は 404 を返す
+ */
+export const updateDatePollResponsesRequestSchema = z.object({
+  responses: z
+    .array(datePollResponseTallyInputSchema)
+    .superRefine((responses, ctx) => {
+      const ids = responses.map((r) => r.id);
+      if (new Set(ids).size !== ids.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "回答 id が重複しています",
+        });
+      }
+    }),
+});
+export type UpdateDatePollResponsesRequest = z.infer<
+  typeof updateDatePollResponsesRequestSchema
+>;
+
+/** PUT /party/:partyId/date-poll/responses のレスポンスボディ */
+export const updateDatePollResponsesResponseSchema = z.object({});
+export type UpdateDatePollResponsesResponse = z.infer<
+  typeof updateDatePollResponsesResponseSchema
 >;
 
 // ── 参加者: フォーム取得（GET /date-poll/:shareToken・認証なし） ──

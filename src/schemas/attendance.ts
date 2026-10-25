@@ -58,9 +58,16 @@ export type CreateAttendanceResponse = z.infer<
 
 // ── 取得（主催者）（GET /party/:partyId/attendance） ──
 
-/** 回答（主催者向け一覧の 1 件）。名簿の元データになる。 */
+/**
+ * 回答（主催者向け一覧の 1 件）。名簿の元データになる。
+ * - `id`: 回答 id。集計対象の保存・名簿の行指定に使う
+ * - `isIncludedInTally`: 集計に含めるか。既定は true で、false の回答は参加/不参加の
+ *   集計から外し、名簿にも出さない（行自体は一覧に残す）
+ */
 const attendanceAnswerItemSchema = z.object({
+  id: z.string().uuid(),
   respondentName: z.string(),
+  isIncludedInTally: z.boolean(),
   /** true = 参加、false = 不参加 */
   isAttending: z.boolean(),
   /** ウェディングオプション有効時のみ値が入る。それ以外は null */
@@ -139,6 +146,62 @@ export type DeleteAttendanceParams = z.infer<
 export const deleteAttendanceResponseSchema = z.object({});
 export type DeleteAttendanceResponse = z.infer<
   typeof deleteAttendanceResponseSchema
+>;
+
+// ── 回答の集計対象を保存（PUT /party/:partyId/attendance/responses） ──
+//
+// 一覧の「集計に含める」チェックをまとめて保存する。回答そのものは参加者が作るため
+// 行の追加・削除はなく、送られた回答だけを反映して送られなかった回答には手を触れない。
+// 1 件だけ保存したい場合も要素 1 件の配列で送る。
+// false にした回答は名簿（GET /party/:partyId/roster）からも外れる。
+
+/** PUT /party/:partyId/attendance/responses のパスパラメータ */
+export const updateAttendanceResponsesParamsSchema = z.object({
+  partyId: z.string().uuid(),
+});
+export type UpdateAttendanceResponsesParams = z.infer<
+  typeof updateAttendanceResponsesParamsSchema
+>;
+
+/**
+ * 保存する 1 件
+ * - `id`: 対象の回答 id
+ * - `isIncludedInTally`: 集計に含めるか
+ */
+const attendanceResponseTallyInputSchema = z.object({
+  id: z.string().uuid(),
+  isIncludedInTally: z.boolean(),
+});
+export type AttendanceResponseTallyInput = z.infer<
+  typeof attendanceResponseTallyInputSchema
+>;
+
+/**
+ * PUT /party/:partyId/attendance/responses のリクエストボディ
+ * - `responses`: 保存する回答（0 件も可）。同じ id は 1 度だけ指定できる。
+ *   指定パーティーの出欠確認の回答でない id が含まれる場合は 404 を返す
+ */
+export const updateAttendanceResponsesRequestSchema = z.object({
+  responses: z
+    .array(attendanceResponseTallyInputSchema)
+    .superRefine((responses, ctx) => {
+      const ids = responses.map((r) => r.id);
+      if (new Set(ids).size !== ids.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "回答 id が重複しています",
+        });
+      }
+    }),
+});
+export type UpdateAttendanceResponsesRequest = z.infer<
+  typeof updateAttendanceResponsesRequestSchema
+>;
+
+/** PUT /party/:partyId/attendance/responses のレスポンスボディ */
+export const updateAttendanceResponsesResponseSchema = z.object({});
+export type UpdateAttendanceResponsesResponse = z.infer<
+  typeof updateAttendanceResponsesResponseSchema
 >;
 
 // ── 参加者: フォーム取得（GET /attendance/:shareToken・認証なし） ──
