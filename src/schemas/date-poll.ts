@@ -49,12 +49,12 @@ export type CreateDatePollParams = z.infer<typeof createDatePollParamsSchema>;
 /**
  * POST /party/:partyId/date-poll のリクエストボディ
  * - `description`: 説明。作成時にパーティー説明を初期値として渡す想定（必須）
- * - `contactInfo`: 変更がある時の連絡先（必須）
+ * - `contactInfo`: 変更がある時の連絡先（任意）
  * - `candidateDates`: 開催日候補（最大 5・重複不可、時間は持たない）
  */
 export const createDatePollRequestSchema = z.object({
   description: z.string().min(1).max(200),
-  contactInfo: z.string().min(1).max(200),
+  contactInfo: z.string().max(200).nullable(),
   candidateDates: candidateDatesInputSchema,
 });
 export type CreateDatePollRequest = z.infer<typeof createDatePollRequestSchema>;
@@ -99,7 +99,7 @@ export const getDatePollResponseSchema = z.object({
   shareToken: z.string().uuid(),
   partyName: z.string(),
   description: z.string(),
-  contactInfo: z.string(),
+  contactInfo: z.string().nullable(),
   candidates: z.array(candidateSchema),
   responses: z.array(datePollAnswerItemSchema),
   createdAt: z.string().datetime(),
@@ -121,7 +121,7 @@ export type UpdateDatePollParams = z.infer<typeof updateDatePollParamsSchema>;
  */
 export const updateDatePollRequestSchema = z.object({
   description: z.string().min(1).max(200),
-  contactInfo: z.string().min(1).max(200),
+  contactInfo: z.string().max(200).nullable(),
 });
 export type UpdateDatePollRequest = z.infer<typeof updateDatePollRequestSchema>;
 
@@ -161,7 +161,7 @@ export type GetDatePollFormParams = z.infer<typeof getDatePollFormParamsSchema>;
 export const getDatePollFormResponseSchema = z.object({
   partyName: z.string(),
   description: z.string(),
-  contactInfo: z.string(),
+  contactInfo: z.string().nullable(),
   candidates: z.array(candidateSchema),
 });
 export type GetDatePollFormResponse = z.infer<

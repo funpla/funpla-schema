@@ -33,14 +33,14 @@ export type CreateAttendanceParams = z.infer<
  * POST /party/:partyId/attendance のリクエストボディ
  * - `location`: 場所（任意）
  * - `feeEstimate`: 会費目安。「5,000〜7,000円」「未定」等に対応するため自由入力（任意）
- * - `contactInfo`: 変更がある時の連絡先（必須）
+ * - `contactInfo`: 変更がある時の連絡先（任意）
  * - `weddingOptionEnabled`: ウェディングオプション。スペシャルプランのときのみ true にできる
  *   （プランとの整合はサーバー側で検証する）
  */
 export const createAttendanceRequestSchema = z.object({
   location: z.string().max(100).nullable(),
   feeEstimate: z.string().max(50).nullable(),
-  contactInfo: z.string().min(1).max(200),
+  contactInfo: z.string().max(200).nullable(),
   weddingOptionEnabled: z.boolean(),
 });
 export type CreateAttendanceRequest = z.infer<
@@ -90,7 +90,7 @@ export const getAttendanceResponseSchema = z.object({
   }),
   location: z.string().nullable(),
   feeEstimate: z.string().nullable(),
-  contactInfo: z.string(),
+  contactInfo: z.string().nullable(),
   weddingOptionEnabled: z.boolean(),
   responses: z.array(attendanceAnswerItemSchema),
   createdAt: z.string().datetime(),
@@ -112,7 +112,7 @@ export type UpdateAttendanceParams = z.infer<
 export const updateAttendanceRequestSchema = z.object({
   location: z.string().max(100).nullable(),
   feeEstimate: z.string().max(50).nullable(),
-  contactInfo: z.string().min(1).max(200),
+  contactInfo: z.string().max(200).nullable(),
   weddingOptionEnabled: z.boolean(),
 });
 export type UpdateAttendanceRequest = z.infer<
@@ -162,7 +162,7 @@ export const getAttendanceFormResponseSchema = z.object({
   startTime: z.string().time({ precision: 0 }),
   location: z.string().nullable(),
   feeEstimate: z.string().nullable(),
-  contactInfo: z.string(),
+  contactInfo: z.string().nullable(),
   weddingOptionEnabled: z.boolean(),
 });
 export type GetAttendanceFormResponse = z.infer<
