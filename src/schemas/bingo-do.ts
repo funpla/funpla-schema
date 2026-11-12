@@ -159,41 +159,64 @@ const bingoSessionStateBaseSchema = z.object({
 // ── 抽選イベント / 演出（共通部品）─────────────────────────────────────────
 
 /**
- * リーチ煽り演出（draw イベント / pendingDraw に同梱）。targetNumber R が出るか煽る。
- * 強のとき R が実際に出る確率が上がっている。number を出す前にサスペンス演出する。
+ * 演出の種別。
+ * - `normal`: 通常演出（3 種）
+ * - `chance`: ゾロ目演出（3 種）。番号がゾロ目(11・22・…・66)のとき
+ * - `anticipation`: 期待演出（4 種）。番号がリーチ番号 ±1 のとき確率で選ばれる
  */
-export const bingoReachTauntSchema = z.object({
-  intensity: z.enum(["weak", "strong"]),
-  targetNumber: z.number().int().min(1).max(75),
-});
-export type BingoReachTaunt = z.infer<typeof bingoReachTauntSchema>;
+export const bingoPresentationKindSchema = z.enum([
+  "normal",
+  "chance",
+  "anticipation",
+]);
+export type BingoPresentationKind = z.infer<typeof bingoPresentationKindSchema>;
+
+/** 通常演出（3 種）/ 期待演出（4 種）のパターン。`charge-same` は期待演出のみ */
+export const bingoMotionPatternSchema = z.enum([
+  "three-step",
+  "return",
+  "snap-next",
+  "charge-same",
+]);
+export type BingoMotionPattern = z.infer<typeof bingoMotionPatternSchema>;
+
+/** ゾロ目演出（3 種）のパターン */
+export const bingoChancePatternSchema = z.enum([
+  "direct",
+  "return",
+  "snap-next",
+]);
+export type BingoChancePattern = z.infer<typeof bingoChancePatternSchema>;
 
 /**
- * ビンゴアニメ演出（draw イベント / pendingDraw に同梱）。採用番号がリーチ番号だった ＝ 誰かビンゴ。
- * 誰がビンゴかは問わない。pattern は 3 種のどれか（サーバーが選ぶ）。
+ * 1 本ぶんの演出（draw イベント / pendingDraw に同梱）。番号の抽選とは独立に、
+ * 確定した番号・リーチ番号・投数からサーバーが選ぶ。display はこれをそのまま再生する。
  */
-export const bingoBingoEffectSchema = z.object({
-  pattern: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+export const bingoPresentationSchema = z.object({
+  kind: bingoPresentationKindSchema,
+  /** kind = normal / anticipation で使うパターン */
+  pattern: bingoMotionPatternSchema,
+  /** kind = chance で使うパターン */
+  chancePattern: bingoChancePatternSchema,
 });
-export type BingoBingoEffect = z.infer<typeof bingoBingoEffectSchema>;
+export type BingoPresentation = z.infer<typeof bingoPresentationSchema>;
 
 /** 抽選 1 本ぶんのペイロード（番号＋演出）。draw イベント本体と pendingDraw で共用する。 */
 export const bingoDrawPayloadSchema = z.object({
   /** 引いた番号（リビール対象） */
   number: z.number().int().min(1).max(75),
-  /** リーチ煽り。無ければ null */
-  reachTaunt: bingoReachTauntSchema.nullable(),
-  /** 誰かビンゴ。無ければ null */
-  bingo: bingoBingoEffectSchema.nullable(),
+  /** サーバーが選んだ演出 */
+  presentation: bingoPresentationSchema,
+  /** 採用番号が抽選前のリーチ番号だった ＝ 誰かビンゴ。演出の分岐には使わない */
+  resultHasBingo: z.boolean(),
 });
 export type BingoDrawPayload = z.infer<typeof bingoDrawPayloadSchema>;
 
 /**
  * 抽選イベント。届くタイミングがロールで異なる:
- * - display: host が draw した瞬間に届き、演出（サスペンス→リビール→ビンゴアニメ）を再生する。
+ * - display: host が draw した瞬間に届き、presentation の演出を再生する。
  * - participant: 演出が**確定**（display のアニメ終了 or host の open）した瞬間に届き、カードに反映する。
- *   participant は reachTaunt / bingo は使わず number のみ使う（自分のビンゴは client が導出）。
- * ゾロ目チャンスは number がゾロ目(11..66)かで display 側が導出する。
+ *   participant は presentation / resultHasBingo は使わず number のみ使う（自分のビンゴは client が導出）。
  */
 export const bingoDrawEventSchema = bingoDrawPayloadSchema.extend({
   type: z.literal("draw"),
@@ -331,8 +354,7 @@ export type BingoSessionDisplayCommand = z.infer<
 // ── 受信（Server → Client）─────────────────────────────────────────────────
 
 /**
- * display 受信 state。投影用。pendingDraw があれば演出中で、再接続時はそこから演出を再開する。
- * ゾロ目チャンスは number がゾロ目(11..66)かで display 側が導出する。
+ * display 受信 state。投影用。pendingDraw があれば演出中で、再接続時はそこから同じ演出を再開する。
  */
 export const bingoSessionDisplayStateSchema =
   bingoSessionStateBaseSchema.extend({
