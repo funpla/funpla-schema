@@ -77,7 +77,8 @@ export type EndBingoSessionParams = z.infer<typeof endBingoSessionParamsSchema>;
 
 /** フェーズ */
 export const bingoSessionPhaseSchema = z.enum([
-  "lobby", // 初期化済み・開始待ち（参加者は接続可）
+  "lobby", // 初期化済み・参加受付中（再生画面は参加 QR コード）
+  "ready", // 再生画面をビンゴ画面へ切り替え済み・1 投目待ち
   "playing", // 抽選進行中
   "finished", // 終了
 ]);
@@ -240,6 +241,12 @@ export type BingoSoundEffect = z.infer<typeof bingoSoundEffectSchema>;
 
 // ── 送信（Client → Server）─────────────────────────────────────────────────
 
+/**
+ * 再生画面を参加 QR コードからビンゴ画面（リールの初期状態）へ切り替える。
+ * phase を lobby → ready にする。ready 以降は何度送っても変化しない。
+ */
+const bingoShowBingoSchema = z.object({ type: z.literal("show_bingo") });
+
 /** 抽選（1 つ引く）。演出中（pendingDraw あり）は非活性・サーバーも拒否する */
 const bingoDrawSchema = z.object({ type: z.literal("draw") });
 
@@ -267,6 +274,7 @@ export type BingoPlaySound = z.infer<typeof bingoPlaySoundSchema>;
 
 /** host が送るコマンド */
 export const bingoSessionHostCommandSchema = z.discriminatedUnion("type", [
+  bingoShowBingoSchema,
   bingoDrawSchema,
   bingoRevealSchema,
   bingoSetManualReachNumbersSchema,
